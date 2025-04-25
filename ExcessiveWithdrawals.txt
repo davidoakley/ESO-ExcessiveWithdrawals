@@ -6,5 +6,5 @@
 ## DependsOn: LibHistoire LibAddonMenu-2.0
 
 ExcessiveWithdrawals.lua
+Utils.lua
 Settings.lua
-# EW_LibHistoire.lua

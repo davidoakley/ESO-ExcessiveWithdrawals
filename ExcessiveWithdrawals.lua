@@ -9,91 +9,10 @@ ExcessiveWithdrawals = {
 		warnings = false,
 		gUser = "",
 		ignoreAmt = "500",
-		lastScan = {},
+		lastEvent = {},
 		userData = {}
 	}
 }
-
-function ExcessiveWithdrawals:GetGuilds()
-	guilds = {}
-	guilds[1] = "-"
-	if GetNumGuilds() > 0 then
-		for guild = 1, GetNumGuilds() do
-			local guildId = GetGuildId(guild)
-			local guildName = GetGuildName(guildId)
-			if not guildName or (guildName):len() < 1 then
-				guildName = "Guild " .. guildId
-			end
-			guilds[guild] = guildName
-		end
-	end
-	d("GUILDs: "..#guilds)
-	return guilds
-end
-
-function ExcessiveWithdrawals:GetGuild(gName)
-	guilds = {}
-	guilds[1] = "-"
-	if GetNumGuilds() > 0 then
-		for guild = 1, GetNumGuilds() do
-			local guildId = GetGuildId(guild)
-			local guildName = GetGuildName(guildId)
-			if not guildName or (guildName):len() < 1 then
-				guildName = "Guild " .. guildId
-			end
-			if gName == guildName then
-				return guildId
-			end
-		end
-	end
-	return false
-end
-
-function ExcessiveWithdrawals:CheckGuildRank(guildID, rank)
-	local users = {}
-	if rank == nil or rank == "-" then rank = 0 end
-	local memberCount = GetNumGuildMembers(guildID)
-	d("ExcessiveWithdrawals:CheckGuildRank: guild '"..guildID.."' has "..memberCount.." members")
-  if memberCount ~= 0 then
-		for mIndex=1, memberCount, 1 do
-			local cName, _, cRank, _, _ = GetGuildMemberInfo(guildID, mIndex)
-      if cName ~= nil then
-        if cRank <= rank then
-					users[string.lower(cName)] = true
-				else
-					users[string.lower(cName)] = false
-				end
-      end
-		end
-	end
-	ExcessiveWithdrawals.users = users
-	return users
-end
-
-function ExcessiveWithdrawals:AddEventToTransactions(transactions, eventType, depositerName, qty, item)
-	if transactions[depositerName] == nil then
-		transactions[depositerName] = {}
-	end
-	local itemID
-	if eventType == GUILD_EVENT_BANKGOLD_ADDED or eventType == GUILD_EVENT_BANKGOLD_REMOVED then
-		itemID = "gold"
-		item = "gold"
-	else
-		itemID = tonumber(string.match(item, '|H.-:item:(.-):'))
-		if itemID == nil then itemID = item end
-	end
-	if transactions[depositerName][itemID] == nil then
-		transactions[depositerName][itemID] = {}
-		transactions[depositerName][itemID]["item"] = item
-		transactions[depositerName][itemID]["qty"] = 0
-	end
-	if eventType == GUILD_HISTORY_BANKED_CURRENCY_EVENT_DEPOSITED or eventType == GUILD_HISTORY_BANKED_ITEM_EVENT_ADDED then
-		transactions[depositerName][itemID]["qty"] = transactions[depositerName][itemID]["qty"] + qty
-	else
-		transactions[depositerName][itemID]["qty"] = transactions[depositerName][itemID]["qty"] - qty
-	end
-end
-
 function ExcessiveWithdrawals:AnalyzeUsers(guildId, guildName)
 	local userRanks = self:CheckGuildRank(guildId, self.db.guildRank)
 	local ignoreAmt = tonumber(self.db.ignoreAmt)
@@ -136,47 +55,9 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId, guildName)
 	end
 end
 
-function ExcessiveWithdrawals:MonitorGuild_OLD()
-	EVENT_MANAGER:UnregisterForUpdate(self.name)
-	if self.db.guild == nil or self.db.guild == "-" or self:GetGuild(self.db.guild) == false or self.defaults.building == true then return end
-	local guildName = self.db.guild
-	local guildId = self:GetGuild(guildName)
-	if guildId == false then return end
-
-	if self.db.userData[guildName] == nil then
-		self.db.userData[guildName] = {}
-		self.db.lastScan[guildName] = nil
-	end
-
-	local startTimestamp = self.db.lastScan[guildName]
-	if startTimestamp == nil then startTimestamp = 1 end
-	local currentTimestamp = GetTimeStamp()
-
-	local numEvents = 0
-	local transactions = {}
-	local lastScan = startTimestamp
-	for tIndex=numEvents, 1, -1 do
-		local eventType, secondsSinceDeposit, depositerName, qty, item, _, _, _ = GetGuildEventInfo(guildId, GUILD_HISTORY_BANK, tIndex)
-		local timestamp = currentTimestamp - secondsSinceDeposit
-		if depositerName ~= nil and timestamp >= startTimestamp then
-			self:AddEventToTransactions(transactions, eventType, depositerName, qty, item)
-		end
-	end
-
-	for user, items in pairs(transactions) do
-		self:BuildUser(guildName, user, items, currentTimestamp)
-	end
-
-	self:AnalyzeUsers(guildId)
-
-	self.db.lastScan[guildName] = lastScan
-	local timer = 600000
-	if tonumber(self.db.delay) ~= nil then timer = tonumber(self.db.delay) * 60000 end
-	EVENT_MANAGER:RegisterForUpdate(self.name, timer, function() ExcessiveWithdrawals:MonitorGuild() end)
-end
-
-local function processItems(self, lib, guildID, eventCategory, transactions, startTimestamp, finishedCallback)
+local function processItems(self, lib, guildID, eventCategory)
 	d("process")
+	local guildName = self.db.guild
 	local processor = lib:CreateGuildHistoryProcessor(guildID, eventCategory, "ExcessiveWithdrawals")
 	if not processor then
 		-- the processor could not be created
@@ -186,20 +67,13 @@ local function processItems(self, lib, guildID, eventCategory, transactions, sta
 	local now = GetTimeStamp()
 
 	local started = processor:StartIteratingTimeRange(now - 24*60*60, now, function(event)
-		local eventTime = event:GetEventTimestampS()
-		local category = event:GetEventCategory()
-		local type = event:GetEventType()
-		local info = event:GetEventInfo()
-		--assert(info.currencyType == CURT_MONEY, "Unsupported currency type")
-
-		if info.displayName ~= nil and info.timestampS >= startTimestamp then
-			self:AddEventToTransactions(transactions, type, "@"..info.displayName, info.quantity, info.itemLink)
-		end
-
+		self:ProcessEvent(event)
+		self.db.lastEvent[guildName][eventCategory] = event:GetEventInfo().eventId
 	end, function(reason)
 		if (reason == LibHistoire.StopReason.ITERATION_COMPLETED or reason == LibHistoire.StopReason.LAST_CACHED_EVENT_REACHED) then
 			-- all events in the time range have been processed
-			finishedCallback(reason)
+			d("FINISHED")
+			self:AnalyzeUsers(guildID, guildName)
 		else
 			d("Iterator failed to finish, reason "..reason)
 			-- the iteration has stopped early for some reason and not all events have been processed
@@ -214,55 +88,28 @@ function ExcessiveWithdrawals:MonitorGuild()
 	local guildId = self:GetGuild(guildName)
 	if guildId == false then return end
 
-	if self.db.userData[guildName] == nil then
-		self.db.userData[guildName] = {}
-		self.db.lastScan[guildName] = nil
-	end
+	if self.db.userData[guildName] == nil then self.db.userData[guildName] = {} end
+	if self.db.lastEvent[guildName] == nil then self.db.lastEvent[guildName] = {} end
 
-	local startTimestamp = self.db.lastScan[guildName]
-	if startTimestamp == nil then startTimestamp = 1 end
-	local currentTimestamp = GetTimeStamp()
+	--local startTimestamp = self.db.lastEvent[guildName]
+	--if startTimestamp == nil then startTimestamp = 1 end
+	--local currentTimestamp = GetTimeStamp()
 
 	LibHistoire:OnReady(function(lib)
 
-		local transactions = {}
-		processItems(self, lib, guildId, GUILD_HISTORY_EVENT_CATEGORY_BANKED_ITEM, transactions, startTimestamp, function()
-			d("FINISHED")
-			for user, items in pairs(transactions) do
-				self:BuildUser(guildName, user, items, currentTimestamp)
-			end
+		processItems(self, lib, guildId, GUILD_HISTORY_EVENT_CATEGORY_BANKED_ITEM)
 
-			self:AnalyzeUsers(guildId, guildName)
-
-			self.db.lastScan[guildName] = lastScan
-		end)
 	end)
 end
 
---function ExcessiveWithdrawals:GetRecentHistory(guildID, currentTimestamp)
---	local numEvents = GetNumGuildEvents(guildID, GUILD_HISTORY_BANK)
---	local _, secondsSinceDeposit, _, _, _, _, _, _ = GetGuildEventInfo(guildID, GUILD_HISTORY_BANK, numEvents)
---	if DoesGuildHistoryCategoryHaveMoreEvents(guildID, GUILD_HISTORY_BANK) == true and (currentTimestamp - secondsSinceDeposit) >= self.lastDeposit then
---		self.defaults.building = true
---		local time = 2000
---		if numEvents > 1 then
---			time = time + math.random(1, numEvents)
---		end
---		RequestGuildHistoryCategoryOlder(guildID, GUILD_HISTORY_BANK)
---		zo_callLater(function()
---			ExcessiveWithdrawals:GetRecentHistory(guildID, currentTimestamp)
---		end, time)
---		return nil
---	end
---	self.defaults.building = false
---	self:MonitorGuild()
---end
+function ExcessiveWithdrawals:GetUser(user, timestampS)
+	local guildName = self.db.guild
 
-function ExcessiveWithdrawals:BuildUser(guildName, user, items, initialScan)
 	if self.db.userData[guildName][string.lower(user)] == nil then
+		d("Creating user "..string.lower(user))
 		self.db.userData[guildName][string.lower(user)] = {
 			userName = user,
-			initialScan = initialScan,
+			initialScan = timestampS,
 			itemsDeposit = 0,
 			itemsWithdraw = 0,
 			itemsDepositVal = 0,
@@ -272,62 +119,46 @@ function ExcessiveWithdrawals:BuildUser(guildName, user, items, initialScan)
 			ignore = false
 		}
 	end
-	user = string.lower(user)
-	for item, data in pairs(items) do
-		if item == "gold" then
-			if data.qty >= 0 then
-				self.db.userData[guildName][user].goldDeposit = self.db.userData[guildName][user].goldDeposit + data.qty
-			else
-				self.db.userData[guildName][user].goldDeposit = self.db.userData[guildName][user].goldDeposit - data.qty
-			end
-		else
-			local qty = data.qty
-			if qty < 0 then qty = qty * -1 end
-			local price = (data.qty ~= 0) and self:GetPrice(data.item) * qty or 0
 
-			if data.qty >= 0 then
-				self.db.userData[guildName][user].itemsDeposit = self.db.userData[guildName][user].itemsDeposit + qty
-				self.db.userData[guildName][user].itemsDepositVal = self.db.userData[guildName][user].itemsDepositVal + price
-			else
-				self.db.userData[guildName][user].itemsWithdraw = self.db.userData[guildName][user].itemsWithdraw + qty
-				self.db.userData[guildName][user].itemsWithdrawVal = self.db.userData[guildName][user].itemsWithdrawVal + price
-			end
-		end
-		if data.qty < 0 then self.db.userData[guildName][string.lower(user)].ignore = false end
+	return self.db.userData[guildName][string.lower(user)]
+end
+
+function ExcessiveWithdrawals:ProcessEvent(event)
+	local info = event:GetEventInfo()
+	local user = "@"..info.displayName
+	local userObj = self:GetUser(user, event:GetEventTimestampS())
+	d("Event for user "..string.lower(user))
+
+
+	if info.displayName ~= nil then
+		--self:AddEventToTransactions(transactions, type, "@"..info.displayName, info.quantity, info.itemLink)
+	end
+
+	if eventType == GUILD_EVENT_BANKGOLD_ADDED or eventType == GUILD_EVENT_BANKGOLD_REMOVED then
+		self:ProcessCashEvent(userObj, event, info)
+	else
+		self:ProcessItemEvent(userObj, event, info)
 	end
 end
 
-function ExcessiveWithdrawals:GetPrice(item)
-	local price = 0
-	if item == "gold" then
-		price = 1
+function ExcessiveWithdrawals:ProcessItemEvent(userObj, event, info)
+	--local eventTime = event:GetEventTimestampS()
+	--local category = event:GetEventCategory()
+	local type = event:GetEventType()
+	local qty = info.quantity
+
+	if qty < 0 then qty = qty * -1 end
+	local price = (info.quantity ~= 0) and self:GetPrice(info.itemLink) * qty or 0
+
+	if type == GUILD_HISTORY_BANKED_ITEM_EVENT_ADDED then
+		userObj.itemsDeposit = userObj.itemsDeposit + qty
+		userObj.itemsDepositVal = userObj.itemsDepositVal + price
 	else
-		if MasterMerchant ~= nil then
-			local itemStats = MasterMerchant:itemStats(item, true)
-			price = itemStats.avgPrice
-		end
-		if TamrielTradeCentrePrice ~= nil and (MasterMerchant == nil or price == nil) then
-			local priceInfo = TamrielTradeCentrePrice:GetPriceInfo(item)
-			if priceInfo ~= nil then
-				if priceInfo.SuggestedPrice ~= nil then
-					price = priceInfo.SuggestedPrice
-				elseif priceInfo.Avg ~= nil then
-					price = priceInfo.Avg
-				else
-					price = 0
-				end
-			else
-				price = 0
-			end
-		end
-		if price == nil or price == 0 then
-			_, price, _, _, _ = GetItemLinkInfo(item)
-		else
-			price = zo_round(price * 100)
-			price = price / 100
-		end
+		userObj.itemsWithdraw = userObj.itemsWithdraw + qty
+		userObj.itemsWithdrawVal = userObj.itemsWithdrawVal + price
 	end
-	return price
+
+	if info.quantity < 0 then userObj.ignore = false end
 end
 
 function ExcessiveWithdrawals:CheckData(user)
@@ -424,7 +255,7 @@ function ExcessiveWithdrawals:Commands(key, val)
 	if string.find(key, "reset") then
 		if string.find(val, "hist") then
 			ExcessiveWithdrawals.db.userData = {}
-			ExcessiveWithdrawals.db.lastScan = {}
+			ExcessiveWithdrawals.db.lastEvent = {}
 			CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n Successfully reset all guild bank history.')
 		else
 			local guildName = nil
@@ -438,7 +269,7 @@ function ExcessiveWithdrawals:Commands(key, val)
 					return true
 				end
 				ExcessiveWithdrawals.db.userData[guildName] = nil
-				ExcessiveWithdrawals.db.lastScan[guildName] = nil
+				ExcessiveWithdrawals.db.lastEvent[guildName] = {}
 			end
 			CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n Successfully reset guild bank history for ' .. guildName .. '.')
 		end
