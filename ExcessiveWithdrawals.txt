@@ -1,6 +1,6 @@
-## Title: |cc40000Excessive Withdrawals|r
-## Version 25.1.0
-## Author: depeshmood SirNightstorm
+## Title: |cFF8000Excessive Withdrawals|r
+## Version 25.1.0b1
+## Author: depeshmood, SirNightstorm
 ## APIVersion: 101044
 ## SavedVariables: ExcessiveWithdrawals_Vars
 ## DependsOn: LibHistoire>=1062 LibAddonMenu-2.0>=38
