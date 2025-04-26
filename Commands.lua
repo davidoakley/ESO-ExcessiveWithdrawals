@@ -10,15 +10,7 @@ function ExcessiveWithdrawals:Commands(key, val)
 			ExcessiveWithdrawals:ShowDisabled(true)
 			return true
 		end
-		if ExcessiveWithdrawals:CheckData(val) == false then return true end
-		local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)]
-		notify = "Enabled"
-		if userData.ignore == true then notify = "Disabled" end
-		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' --\n  Username: ' .. userData.userName .. '\n |  Items Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDeposit) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDepositVal) .. ' gold\n |  Items Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdraw) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdrawVal) .. ' gold\n |  Gold Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.goldDeposit) .. '\n |  Gold Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.goldWithdraw) .. '\n |  First Scanned on ' .. GetDateStringFromTimestamp(userData.initialScan) .. '\n |  Notifications: ' .. notify)
-		itemTot = userData.itemsDepositVal - userData.itemsWithdrawVal
-		goldTot = userData.goldDeposit - userData.goldWithdraw
-		grandTot = itemTot + goldTot
-		CHAT_SYSTEM:AddMessage("Guild Bank Total Values --\n  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot))
+		self:ShowUserHistory(val)
 		return true
 	end
 	if string.find(key, "ign") or string.find(key, "ena") then

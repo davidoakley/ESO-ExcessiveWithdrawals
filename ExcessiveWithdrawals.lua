@@ -3,12 +3,11 @@ ExcessiveWithdrawals = {
 	name = "ExcessiveWithdrawals",
 	addonName = "Excessive Withdrawals",
 	displayName = "|cc40000Excessive Withdrawals|r",
-	scanInterval = 600000,
 	defaults = {
 		building = false,
 		warnings = false,
 		gUser = "",
-		ignoreAmt = "500",
+		ignoreAmt = 10000,
 		guilds = {}
 	},
 	processors = {}
@@ -43,6 +42,7 @@ function ExcessiveWithdrawals:UserSummary(userName, userData)
 	local balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
 	table.insert(entries, "= |cFF8000-" .. fmtnum(-balance) .. "|r")
 
+	userName = string.format("|H0:character:%s|h%s|h", userName, userName)
 	return userName .. " (" .. table.concat(entries, " ") .. ")"
 end
 
@@ -277,6 +277,51 @@ function ExcessiveWithdrawals:ShowDisabled(showHint)
 	end
 end
 
+function ExcessiveWithdrawals:ShowUserHistory(userName)
+	if userName:sub(1, 1) ~= "@" then userName = "@" .. userName end
+	if ExcessiveWithdrawals:CheckData(userName) == false then return true end
+	local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(userName)]
+	notify = "Enabled"
+	if userData.ignore == true then notify = "Disabled" end
+	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' --\n  Username: ' .. userData.userName .. '\n |  Items Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDeposit) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDepositVal) .. ' gold\n |  Items Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdraw) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdrawVal) .. ' gold\n |  Gold Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.goldDeposit) .. '\n |  Gold Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.goldWithdraw) .. '\n |  First Scanned on ' .. GetDateStringFromTimestamp(userData.initialScan) .. '\n |  Notifications: ' .. notify)
+	itemTot = userData.itemsDepositVal - userData.itemsWithdrawVal
+	goldTot = userData.goldDeposit - userData.goldWithdraw
+	grandTot = itemTot + goldTot
+	CHAT_SYSTEM:AddMessage("Guild Bank Total Values --\n  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot))
+end
+
+function ExcessiveWithdrawals.AdjustContextMenus()
+	local ShowPlayerContextMenu = CHAT_SYSTEM.ShowPlayerContextMenu
+	CHAT_SYSTEM.ShowPlayerContextMenu = function(self, displayName, rawName)
+		ShowPlayerContextMenu(self, displayName, rawName)
+		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(displayName) end )
+		--d("DisplayName: " .. displayName)
+		if ZO_Menu_GetNumMenuItems() > 0 then
+			ShowMenu()
+		end
+	end
+
+	local GuildRosterRow_OnMouseUp = GUILD_ROSTER_KEYBOARD.GuildRosterRow_OnMouseUp
+	GUILD_ROSTER_KEYBOARD.GuildRosterRow_OnMouseUp = function(self, control, button, upInside)
+
+		local data = ZO_ScrollList_GetData(control)
+		GuildRosterRow_OnMouseUp(self, control, button, upInside)
+
+		if (button ~= MOUSE_BUTTON_INDEX_RIGHT --[[and not upInside]]) then
+			return
+		end
+
+		if data ~= nil then
+			--In case someone messed around with the guild roster... >_<
+			--data.characterName = string.gsub(data.characterName, "|ceeeeee", "")
+			--d(data.displayName)
+			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(data.displayName) end )
+			self:ShowMenu(control)
+		end
+	end
+
+end
+
 function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 	if addon ~= ExcessiveWithdrawals.name then return end
 	ExcessiveWithdrawals.db = ZO_SavedVars:NewAccountWide("ExcessiveWithdrawals_Vars", 1, nil, ExcessiveWithdrawals.defaults)
@@ -294,6 +339,7 @@ function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 	if ExcessiveWithdrawals.db.guildId then
 		ExcessiveWithdrawals:MonitorGuild()
 	end
+	ExcessiveWithdrawals.AdjustContextMenus()
 end
 
 EVENT_MANAGER:RegisterForEvent(ExcessiveWithdrawals.name, EVENT_ADD_ON_LOADED, ExcessiveWithdrawals.OnAddOnLoaded)
