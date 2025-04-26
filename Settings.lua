@@ -140,23 +140,23 @@ function ExcessiveWithdrawals:Menu()
 			name = "Addon Settings",
 			width = "full",
 		},
-		{
-			type = "slider",
-			name = "Scan Every ... minute(s)",
-			tooltip = "This allows you to change the duration of time between each scan and notification(s).",
-			width = "full",
-			min = 1,
-			max = 60,
-			default = 10,
-			getFunc = function() return self.db.delay end,
-			setFunc = function(value)
-				self.db.delay = value
-				if tonumber(value) ~= nil then
-					EVENT_MANAGER:UnregisterForUpdate(self.name)
-					EVENT_MANAGER:RegisterForUpdate(self.name, tonumber(value) * 60000, function() ExcessiveWithdrawals:MonitorGuild() end)
-				end
-			end
-		},
+		--{
+		--	type = "slider",
+		--	name = "Scan Every ... minute(s)",
+		--	tooltip = "This allows you to change the duration of time between each scan and notification(s).",
+		--	width = "full",
+		--	min = 1,
+		--	max = 60,
+		--	default = 10,
+		--	getFunc = function() return self.db.delay end,
+		--	setFunc = function(value)
+		--		self.db.delay = value
+		--		if tonumber(value) ~= nil then
+		--			EVENT_MANAGER:UnregisterForUpdate(self.name)
+		--			EVENT_MANAGER:RegisterForUpdate(self.name, tonumber(value) * 60000, function() ExcessiveWithdrawals:MonitorGuild() end)
+		--		end
+		--	end
+		--},
 		{
 			type = "checkbox",
 			name = "Disable Warnings",
@@ -194,7 +194,25 @@ function ExcessiveWithdrawals:Menu()
 		},
 		{
 			type = "description",
-			text = "To open this menu, type: /exwithdraw\n\nUser's History: /excessive history @USERNAME\nDisable notifications: /excessive ignore @USERNAME\n               (auto-enabled upon deposit/withdrawal)\nEnable notifications: /excessive enable @USERNAME\nRemove history: /excessive remove @USERNAME\n\nList users with disabled notifications: /excessive history all\n               (configured guild members only)\n\nReset guild history: /excessive reset GUILD_NUMBER\nReset all history: /excessive reset history\n               (see below, as this can have a serious impact)\n\nPlease note: The guild bank's history is limited to 10 days, including today, and is only able to obtain information 9 days into the past. You will need to allow this addon to load and populate regularly within that timeframe in order to keep the information up-to-date.\n\nSlash commands can sometimes cause the UI to become unresponsive.\nType \"/reloadui\" to reset your user interface and resolve the issue."
+			text = [[
+To open this menu, type: /exwithdraw
+
+List users with excessive withdrawals: /excessive list
+
+User's History: /excessive history @USERNAME
+Disable notifications: /excessive ignore @USERNAME
+               (auto-enabled upon deposit/withdrawal)
+Enable notifications: /excessive enable @USERNAME
+Remove history: /excessive remove @USERNAME
+
+List users with disabled notifications: /excessive history all
+               (configured guild members only)
+
+Reset guild history: /excessive reset GUILD_NUMBER
+Reset all history: /excessive reset history
+
+Slash commands can sometimes cause the UI to become unresponsive.
+Type "/reloadui" to reset your user interface and resolve the issue.]]
 		}
 	}
 	LAM2:RegisterOptionControls(self.name .. "LAM2Options", optionsTable)

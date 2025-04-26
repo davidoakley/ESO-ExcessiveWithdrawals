@@ -75,6 +75,9 @@ function ExcessiveWithdrawals.Cmd(txt)
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ': type "/exwithdraw" for a list of commands.')
 		return
 	end
+	if txt:sub(1, 1) == "@" then
+		txt = "history "..txt
+	end
 	local arr = {}
 	local i = 1
 	for val in string.gmatch(txt,"%w+") do
