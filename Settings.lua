@@ -18,6 +18,22 @@ function ExcessiveWithdrawals:Menu()
 		registerForRefresh = true,
 		registerForDefaults = true,
 	}
+
+	local rankChoices = { '-' }
+	local rankValues = { '-' }
+	local numRanks = GetNumGuildRanks(self.db.guildId)
+	for i = 1, numRanks do
+		table.insert(rankChoices, GetGuildRankCustomName(self.db.guildId, i))
+		table.insert(rankValues, i)
+	end
+
+	local demoteChoices = { }
+	local demoteValues = { }
+	for i = 3, numRanks do
+		table.insert(demoteChoices, GetGuildRankCustomName(self.db.guildId, i))
+		table.insert(demoteValues, i)
+	end
+
 	LAM2:RegisterAddonPanel(self.name .. "LAM2Options", panelData)
 	local optionsTable = {
 		{
@@ -36,13 +52,16 @@ function ExcessiveWithdrawals:Menu()
 			setFunc = function(choice)
 				self.db.guildId = choice
 				d("Guild "..self.db.guildId)
-			end
+			end,
+			requiresReload = true
 		},
 		{
 			type = "dropdown",
 			name = "Exclude Guild Rank(s)     #",
 			tooltip = "The guild rank(s) to exclude, in the order they appear in the guild pane, and above.\n1 = Guild Master",
-			choices = {"-", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			choices = rankChoices,
+			choicesValues = rankValues,
+			--choices = {"-", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
 			default = "-",
 			getFunc = function() return self.db.guildRank end,
 			setFunc = function(choice) self.db.guildRank = choice end
@@ -88,8 +107,9 @@ function ExcessiveWithdrawals:Menu()
 			type = "dropdown",
 			name = "New Guild Rank               #",
 			tooltip = "The guild rank that you would like to demote players to that exceed the above amount. This should be a rank that does not have guild bank withdrawal permissions.",
-			choices = {"-", 3, 4, 5, 6, 7, 8, 9, 10},
-			default = 10,
+			choices = demoteChoices,
+			choicesValues = demoteValues,
+			default = numRanks,
 			getFunc = function() return self.db.demoteRank end,
 			setFunc = function(choice) self.db.demoteRank = choice end
 		},
