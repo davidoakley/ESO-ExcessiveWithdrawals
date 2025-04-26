@@ -5,7 +5,7 @@
 ---
 
 
-function ExcessiveWithdrawals:GetGuilds()
+function ExcessiveWithdrawals:GetGuildNames()
 	guilds = {}
 	guilds[1] = "-"
 	if GetNumGuilds() > 0 then
@@ -18,11 +18,22 @@ function ExcessiveWithdrawals:GetGuilds()
 			guilds[guild] = guildName
 		end
 	end
-	d("GUILDs: "..#guilds)
 	return guilds
 end
 
-function ExcessiveWithdrawals:GetGuild(gName)
+function ExcessiveWithdrawals:GetGuildIds()
+	guilds = {}
+	guilds[1] = 0
+	if GetNumGuilds() > 0 then
+		for guild = 1, GetNumGuilds() do
+			local guildId = GetGuildId(guild)
+			guilds[guild] = guildId
+		end
+	end
+	return guilds
+end
+
+function ExcessiveWithdrawals:GetGuildIdByName(gName)
 	guilds = {}
 	guilds[1] = "-"
 	if GetNumGuilds() > 0 then
@@ -40,14 +51,13 @@ function ExcessiveWithdrawals:GetGuild(gName)
 	return false
 end
 
-function ExcessiveWithdrawals:CheckGuildRank(guildID, rank)
+function ExcessiveWithdrawals:CheckGuildRank(guildId, rank)
 	local users = {}
 	if rank == nil or rank == "-" then rank = 0 end
-	local memberCount = GetNumGuildMembers(guildID)
-	d("ExcessiveWithdrawals:CheckGuildRank: guild '"..guildID.."' has "..memberCount.." members")
+	local memberCount = GetNumGuildMembers(guildId)
 	if memberCount ~= 0 then
 		for mIndex=1, memberCount, 1 do
-			local cName, _, cRank, _, _ = GetGuildMemberInfo(guildID, mIndex)
+			local cName, _, cRank, _, _ = GetGuildMemberInfo(guildId, mIndex)
 			if cName ~= nil then
 				if cRank <= rank then
 					users[string.lower(cName)] = true
@@ -92,4 +102,15 @@ function ExcessiveWithdrawals:GetPrice(item)
 		end
 	end
 	return price
+end
+
+function ExcessiveWithdrawals:CommaValue(amount)
+	amount = zo_round(amount)
+	local formatted = amount
+	while true do
+		local k
+		formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+		if k == 0 then break end
+	end
+	return formatted
 end

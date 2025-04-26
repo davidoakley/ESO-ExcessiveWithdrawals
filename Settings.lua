@@ -29,10 +29,14 @@ function ExcessiveWithdrawals:Menu()
 			type = "dropdown",
 			name = "Guild",
 			tooltip = "This is the guild that you would like to use to scan.",
-			choices = self:GetGuilds(),
+			choices = self:GetGuildNames(),
+			choicesValues = self:GetGuildIds(),
 			default = "-",
-			getFunc = function() return self.db.guild end,
-			setFunc = function(choice) self.db.guild = choice end
+			getFunc = function() return self.db.guildId end,
+			setFunc = function(choice)
+				self.db.guildId = choice
+				d("Guild "..self.db.guildId)
+			end
 		},
 		{
 			type = "dropdown",
@@ -157,9 +161,17 @@ function ExcessiveWithdrawals:Menu()
 			type = "checkbox",
 			name = "Disable Warnings",
 			tooltip = "This will disable the warning and/or error messages when pricing addons, Master Merchant and Tamriel Trade Centre, are not found and/or enabled.",
-			width = "full",
+			width = "half",
 			getFunc = function() return self.db.warnings end,
 			setFunc = function(value) self.db.warnings = value end
+		},
+		{
+			type = "checkbox",
+			name = "Log events",
+			tooltip = "This will log in chat when any user event occurs - will cause a log of output on the initial scan!",
+			width = "half",
+			getFunc = function() return self.db.logging end,
+			setFunc = function(value) self.db.logging = value end
 		},
 		{
 			type = "button",
@@ -173,7 +185,7 @@ function ExcessiveWithdrawals:Menu()
 			name = "Reset Guild",
 			tooltip = "This will clear all data for the currently selected guild. (see warning below)",
 			width = "half",
-			func = function() self:Commands("reset", self:GetGuild(self.db.guild)) end
+			func = function() self:Commands("reset", self.db.guildId) end
 		},
 		{
 			type = "header",
