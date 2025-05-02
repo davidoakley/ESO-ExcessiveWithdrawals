@@ -25,25 +25,20 @@ local function fmtnum(val)
 end
 
 function ExcessiveWithdrawals:UserSummary(userName, userData)
-	local entries = {}
-	if userData.itemsDepositVal > 0 or userData.itemsWithdrawVal > 0 then
-		local entry = "items "
-		if userData.itemsDepositVal > 0 then entry = entry .. "|c00FF00+" .. fmtnum(userData.itemsDepositVal) .. "|r" end
-		if userData.itemsWithdrawVal > 0 then entry = entry .. "|cFF8000-" .. fmtnum(userData.itemsWithdrawVal) .. "|r" end
-		table.insert(entries, entry)
-	end
-	if userData.goldDeposit > 0 or userData.goldWithdraw > 0 then
-		local entry = "gold "
-		if userData.goldDeposit > 0 then entry = entry .. "|c00FF00+" .. fmtnum(userData.goldDeposit) .. "|r" end
-		if userData.goldWithdraw > 0 then entry = entry .. "|cFF8000-" .. fmtnum(userData.goldWithdraw) .. "|r" end
-		table.insert(entries, entry)
+	local summary = {
+		userName = userName,
+		balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
+	}
+
+	for key, value in pairs(userData) do
+		summary[key] = value
 	end
 
-	local balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
-	table.insert(entries, "= |cFF8000-" .. fmtnum(-balance) .. "|r")
+	return summary
+end
 
-	userName = string.format("|H0:character:%s|h%s|h", userName, userName)
-	return userName .. " (" .. table.concat(entries, " ") .. ")"
+local function balanceComparison(x,y)
+	return x.balance < y.balance
 end
 
 function ExcessiveWithdrawals:AnalyzeUsers(guildId)
@@ -60,16 +55,16 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId)
 		end
 	end
 
-	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. " -- |cFF8000Users exceeding guild bank allowance:|r")
-
 	local results = {}
 	for user, arr in pairs(self.db.guilds[guildId].users) do
 		if arr.ignore ~= true and userRanks[user] ~= true then
 			local balance = arr.goldDeposit - arr.goldWithdraw + arr.itemsDepositVal - arr.itemsWithdrawVal
 			if (dAmt ~= nil and (dAmt + balance) < 0) or (ignoreAmt + balance) < 0 then
+				local summary = self:UserSummary(arr.userName, arr)
 				if userRanks[user] == nil then
-					table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr) .. " - |cFF8000no longer a member!|r")
+					summary.warning = "no longer a member!"
 				else
+					summary.member = true
 					local uRank
 					if dAmt ~= nil and (dAmt + balance) < 0 then
 						_, _, uRank, _, _ = GetGuildMemberInfo(guildId, GetGuildMemberIndexFromDisplayName(guildId, arr.userName))
@@ -81,19 +76,51 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId)
 							end, 1000 * uRank)
 							uRank = uRank + 1
 						end
-						table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr) .. " - |cFF8000demoted!|r")
-					else
-						table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr))
+						summary.warning = "demoted!"
 					end
 				end
+				table.insert(results, summary)
 				found = true
 			end
 		end
 	end
+
+	table.sort(results, balanceComparison)
+
+	return results
+end
+
+function ExcessiveWithdrawals:ListAnalysis(results)
+	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. " -- |cFF8000Users exceeding guild bank allowance:|r")
+
 	if #results then
-		table.sort(results)
+
 		for i = 1, #results do
-			CHAT_SYSTEM:AddMessage(results[i])
+			local userData = results[i]
+
+			local entries = {}
+			if userData.itemsDepositVal > 0 or userData.itemsWithdrawVal > 0 then
+				local entry = "items "
+				if userData.itemsDepositVal > 0 then entry = entry .. "+" .. fmtnum(userData.itemsDepositVal)  end
+				if userData.itemsWithdrawVal > 0 then entry = entry .. "-" .. fmtnum(userData.itemsWithdrawVal) end
+				table.insert(entries, entry)
+			end
+			if userData.goldDeposit > 0 or userData.goldWithdraw > 0 then
+				local entry = "gold "
+				if userData.goldDeposit > 0 then entry = entry .. "+" .. fmtnum(userData.goldDeposit) end
+				if userData.goldWithdraw > 0 then entry = entry .. "-" .. fmtnum(userData.goldWithdraw) end
+				table.insert(entries, entry)
+			end
+
+			local balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
+			table.insert(entries, "= -" .. fmtnum(-balance))
+
+			local text =  userData.userName .. " (" .. table.concat(entries, " ") .. ")"
+			if userData.warning then
+				text = text .. " - " .. userData.warning
+			end
+
+			CHAT_SYSTEM:AddMessage(text)
 		end
 	else
 		CHAT_SYSTEM:AddMessage(" - none!")
@@ -322,6 +349,10 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 
 end
 
+function ExcessiveWithdrawals.CloseWindow()
+	ExcessiveWithdrawals.window:SetHidden(true)
+end
+
 function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 	if addon ~= ExcessiveWithdrawals.name then return end
 	ExcessiveWithdrawals.db = ZO_SavedVars:NewAccountWide("ExcessiveWithdrawals_Vars", 1, nil, ExcessiveWithdrawals.defaults)
@@ -340,6 +371,8 @@ function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 		ExcessiveWithdrawals:MonitorGuild()
 	end
 	ExcessiveWithdrawals.AdjustContextMenus()
+
+	ExcessiveWithdrawals.window:Init()
 end
 
 EVENT_MANAGER:RegisterForEvent(ExcessiveWithdrawals.name, EVENT_ADD_ON_LOADED, ExcessiveWithdrawals.OnAddOnLoaded)

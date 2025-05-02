@@ -56,7 +56,8 @@ function ExcessiveWithdrawals:Commands(key, val)
 		return true
 	end
 	if string.find(key, "list") then
-		ExcessiveWithdrawals:AnalyzeUsers(ExcessiveWithdrawals.db.guildId)
+		local results = ExcessiveWithdrawals:AnalyzeUsers(ExcessiveWithdrawals.db.guildId)
+		self:ListAnalysis(results)
 		return true
 	end
 	return false
@@ -64,7 +65,8 @@ end
 
 function ExcessiveWithdrawals.Cmd(txt)
 	if txt == "" then
-		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ': type "/exwithdraw" for a list of commands.')
+		ExcessiveWithdrawals.window:Open()
+		--CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ': type "/exwithdraw" for a list of commands.')
 		return
 	end
 	if txt:sub(1, 1) == "@" then
