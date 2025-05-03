@@ -4,11 +4,10 @@
 --- DateTime: 30/04/2025 13:10
 ---
 local Window = ExcessiveWithdrawals.window
+local GetColorDefForValue = ExcessiveWithdrawals.GetColorDefForValue
 
 function Window:Init()
-	self.userListCtrl = self:GetNamedChild("UserList")
-
-	ZO_ScrollList_AddDataType(self.userListCtrl, 0, "EWWindow_UserRow", 35, function(...) self:layoutUserRow(...) end, nil, nil, nil)
+	ZO_ScrollList_AddDataType(self.userListCtrl, 0, "EWWindow_UserRow", 35, function(...) self:LayoutRow(...) end, nil, nil, nil)
 end
 
 local function fmtnum(val)
@@ -17,6 +16,8 @@ end
 
 function Window:Open()
 	self:SetHidden(false)
+
+	self.titleLabel:SetText("Excessive Withdrawals - " .. GetGuildName(ExcessiveWithdrawals.db.guildId))
 
 	ZO_ScrollList_Clear(self.userListCtrl)
 	local scrollData = ZO_ScrollList_GetDataList(self.userListCtrl)
@@ -28,12 +29,14 @@ function Window:Open()
 		table.insert(scrollData, entry)
 	end
 
-
 	ZO_ScrollList_Commit(self.userListCtrl)
-
 end
 
-function Window:layoutUserRow(rowCtrl, data, _)
+function Window:Close()
+	self:SetHidden(true)
+end
+
+function Window:LayoutRow(rowCtrl, data, _)
 	rowCtrl.nameLabel:SetText(data.userName or "-")
 	rowCtrl.addedLabel:SetText(fmtnum(data.itemsDepositVal) or "-")
 	rowCtrl.removedLabel:SetText(fmtnum(data.itemsWithdrawVal) or "-")
@@ -41,11 +44,13 @@ function Window:layoutUserRow(rowCtrl, data, _)
 	rowCtrl.donatedLabel:SetText(fmtnum(cashDonated) or "-")
 	rowCtrl.balanceLabel:SetText(("-"..fmtnum(-data.balance)) or "-")
 
-	local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
+	--local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
+	local colourOverride = not data.member and ZO_ColorDef:New("CCCCCC")
+	local colour = colourOverride or ZO_DEFAULT_ENABLED_COLOR
 
 	rowCtrl.nameLabel:SetColor(colour:UnpackRGBA())
-	rowCtrl.addedLabel:SetColor(colour:UnpackRGBA())
-	rowCtrl.removedLabel:SetColor(colour:UnpackRGBA())
-	rowCtrl.donatedLabel:SetColor(colour:UnpackRGBA())
-	rowCtrl.balanceLabel:SetColor(colour:UnpackRGBA())
+	rowCtrl.addedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())
+	rowCtrl.removedLabel:SetColor((colourOverride or GetColorDefForValue(-1)):UnpackRGBA())
+	rowCtrl.donatedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())
+	rowCtrl.balanceLabel:SetColor((colourOverride or GetColorDefForValue(data.balance)):UnpackRGBA())
 end

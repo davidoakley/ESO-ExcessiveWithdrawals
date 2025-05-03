@@ -1,0 +1,154 @@
+<GuiXml>
+    <Controls>
+
+        <Control name="EWUserWindow_Row" virtual="true" mouseEnabled="true">
+            <OnInitialized>
+                self.dateLabel = self:GetNamedChild("Date")
+                self.nameLabel = self:GetNamedChild("Name")
+                self.priceLabel = self:GetNamedChild("Price")
+                self.balanceLabel = self:GetNamedChild("Balance")
+            </OnInitialized>
+
+            <Dimensions y="35"/>
+            <Controls>
+                <!-- Right side -->
+                <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="false" text="Balance">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-8" offsetY="0"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <Label name="$(parent)Price" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="false" text="Price">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <!-- Left side -->
+                <Label name="$(parent)Date" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="CENTER" verticalAlignment="CENTER" mouseEnabled="false" text="Date">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Dimensions x="160" y="35" />
+                </Label>
+
+                <!-- Fill -->
+                <Label name="$(parent)Name" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" verticalAlignment="CENTER" wrapMode="ELLIPSIS" mouseEnabled="false" text="Description">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Date" relativePoint="TOPRIGHT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions y="35" />
+                </Label>
+            </Controls>
+            <OnMouseUp>
+                d("OnMouseUp EWUserWindow_Row")
+                --if upInside then Navigator.MapTab:CategoryRowMouseUp(self, button) end
+            </OnMouseUp>
+        </Control>
+
+        <Control name="EWUserWindow_HeadingRow" virtual="true" mouseEnabled="true">
+            <Dimensions y="48"/>
+            <Controls>
+                <!-- Right side -->
+                <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="false" text="Balance">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-18" offsetY="0"/>
+                    <Dimensions x="120" y="48" />
+                </Label>
+
+                <Label name="$(parent)Price" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="false" text="Price">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="48" />
+                </Label>
+
+                <!-- Left side -->
+                <Label name="$(parent)Date" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="CENTER" verticalAlignment="CENTER" mouseEnabled="false" text="Date">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="48" />
+                </Label>
+
+                <!-- Fill -->
+                <Label name="$(parent)Description" inherits="ZO_SelectableLabel" font="ZoFontHeader" verticalAlignment="CENTER" mouseEnabled="false" text="Description">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Date" relativePoint="TOPRIGHT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions y="48" />
+                </Label>
+            </Controls>
+        </Control>
+
+        <TopLevelControl name="EWUserWindow" mouseEnabled="true" movable="true" clampedToScreen="true" hidden="true" resizeHandleSize="8" tier="MEDIUM">
+            <Dimensions x="850" y="600" />
+            <DimensionConstraints minX="600" minY="300" />
+            <Anchor point="CENTER" />
+
+            <OnInitialized>
+                ExcessiveWithdrawals.userWindow = self
+                self.listCtrl = self:GetNamedChild("List")
+                self.titleLabel = self:GetNamedChild("HeaderLabel")
+                self.spinner = self:GetNamedChild("HeaderLoadingSpinner")
+            </OnInitialized>
+
+            <OnUpdate>
+                --DQT.Main:update()
+            </OnUpdate>
+
+            <OnResizeStop>
+                ZO_ScrollList_RefreshVisible(self.listCtrl)
+            </OnResizeStop>
+
+            <OnShow>
+            </OnShow>
+
+            <Controls>
+                <Backdrop name="$(parent)BG" inherits="ZO_DefaultBackdrop">
+                    <AnchorFill />
+                </Backdrop>
+
+                <Control name="$(parent)Header">
+                    <Dimensions y="55" />
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="0" />
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-8" offsetY="0" />
+                    <Controls>
+                        <Button name="$(parent)CloseButton">
+                            <Dimensions y="25" x="25" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="4" />
+                            <Textures normal="esoui/art/buttons/decline_up.dds" pressed="esoui/art/buttons/decline_down.dds" mouseOver="esoui/art/buttons/decline_over.dds" />
+                            <OnClicked>ExcessiveWithdrawals.userWindow:Close()</OnClicked>
+                        </Button>
+
+                        <Label name="$(parent)Label" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" text="@UserName">
+<!--                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="4" offsetY="10" />-->
+                            <Anchor point="TOP" relativeTo="$(parent)" offsetX="0" offsetY="10" />
+                        </Label>
+
+                        <!-- Loading spinner -->
+                        <Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="false" >
+                            <Anchor point="LEFT" relativePoint="LEFT" relativeTo="$(parent)" offsetX="4" offsetY="4" />
+                            <Dimensions y="20" />
+                            <OnInitialized>
+                                ZO_Loading_Initialize(self, GetString(SI_INTERFACE_OPTIONS_DEFERRED_LOADING_TEXT))
+                            </OnInitialized>
+                        </Control>
+                    </Controls>
+                </Control>
+
+                <Texture name="$(parent)TopDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
+                    <Dimensions y="4"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Header" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Header" relativePoint="BOTTOMRIGHT" offsetX="0" offsetY="0"/>
+                </Texture>
+
+                <Control name="$(parent)Headings" inherits="EWUserWindow_HeadingRow">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMLEFT" offsetX="8" offsetY="0" />
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="0" />
+                </Control>
+
+                <Texture name="$(parent)HeadingsDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
+                    <Dimensions y="4"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Headings" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Headings" relativePoint="BOTTOMRIGHT" offsetX="0" offsetY="0"/>
+                </Texture>
+
+                <Control name="$(parent)List" inherits="ZO_ScrollList">
+                    <Anchor point="TOPLEFT"  relativeTo="$(parent)HeadingsDivider" relativePoint="BOTTOMLEFT" offsetY="8" />
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="-8" />
+                </Control>
+            </Controls>
+        </TopLevelControl>
+
+    </Controls>
+</GuiXml>

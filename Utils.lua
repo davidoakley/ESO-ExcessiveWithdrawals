@@ -114,3 +114,17 @@ function ExcessiveWithdrawals:CommaValue(amount)
 	end
 	return formatted
 end
+
+function ExcessiveWithdrawals.GetHexForValue(value)
+	local colourHex = "CCCCCC"
+	if value > 0 then
+		colourHex = "AAFFAA"
+	elseif value < 0 then
+		colourHex = "FFCC99"
+	end
+	return colourHex
+end
+
+function ExcessiveWithdrawals.GetColorDefForValue(value)
+	return ZO_ColorDef:New(ExcessiveWithdrawals.GetHexForValue(value))
+end

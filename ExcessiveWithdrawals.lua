@@ -20,12 +20,18 @@ function ExcessiveWithdrawals:ResetGuild(guildId)
 	}
 end
 
-local function fmtnum(val)
-	return zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
+local function fmtnum(val, showPositive)
+	if val < 0 then
+		return "-"..zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(-val)))
+	else
+		return (showPositive and "+" or "") .. zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
+	end
 end
+ExcessiveWithdrawals.fmtnum = fmtnum
 
-function ExcessiveWithdrawals:UserSummary(userName, userData)
+function ExcessiveWithdrawals:UserSummary(guildId, userName, userData)
 	local summary = {
+		guildId = guildId,
 		userName = userName,
 		balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
 	}
@@ -60,7 +66,7 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId)
 		if arr.ignore ~= true and userRanks[user] ~= true then
 			local balance = arr.goldDeposit - arr.goldWithdraw + arr.itemsDepositVal - arr.itemsWithdrawVal
 			if (dAmt ~= nil and (dAmt + balance) < 0) or (ignoreAmt + balance) < 0 then
-				local summary = self:UserSummary(arr.userName, arr)
+				local summary = self:UserSummary(guildId, arr.userName, arr)
 				if userRanks[user] == nil then
 					summary.warning = "no longer a member!"
 				else
@@ -155,20 +161,6 @@ local function processItems(self, lib, guildId, eventCategory)
 	if not started then
 		d("Failed to start processor for category "..eventCategory)
 	end
-
-	--local started = processor:StartIteratingTimeRange(now - 24*60*60, now, function(event)
-	--	self:ProcessEvent(event)
-	--	self.db.lastEvent[guildName][eventCategory] = event:GetEventInfo().eventId
-	--end, function(reason)
-	--	if (reason == LibHistoire.StopReason.ITERATION_COMPLETED or reason == LibHistoire.StopReason.LAST_CACHED_EVENT_REACHED) then
-	--		-- all events in the time range have been processed
-	--		d("FINISHED")
-	--		self:AnalyzeUsers(guildID, guildName)
-	--	else
-	--		d("Iterator failed to finish, reason "..reason)
-	--		-- the iteration has stopped early for some reason and not all events have been processed
-	--	end
-	--end)
 end
 
 function ExcessiveWithdrawals:MonitorGuild()
@@ -349,10 +341,6 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 
 end
 
-function ExcessiveWithdrawals.CloseWindow()
-	ExcessiveWithdrawals.window:SetHidden(true)
-end
-
 function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 	if addon ~= ExcessiveWithdrawals.name then return end
 	ExcessiveWithdrawals.db = ZO_SavedVars:NewAccountWide("ExcessiveWithdrawals_Vars", 1, nil, ExcessiveWithdrawals.defaults)
@@ -373,6 +361,7 @@ function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 	ExcessiveWithdrawals.AdjustContextMenus()
 
 	ExcessiveWithdrawals.window:Init()
+	ExcessiveWithdrawals.userWindow:Init()
 end
 
 EVENT_MANAGER:RegisterForEvent(ExcessiveWithdrawals.name, EVENT_ADD_ON_LOADED, ExcessiveWithdrawals.OnAddOnLoaded)
