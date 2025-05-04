@@ -10,7 +10,8 @@ function ExcessiveWithdrawals:Commands(key, val)
 			ExcessiveWithdrawals:ShowDisabled(true)
 			return true
 		end
-		self:ShowUserHistory(val)
+		--self:ShowUserHistory(val)
+		ExcessiveWithdrawals.userWindow:Open(ExcessiveWithdrawals.db.guildId, val)
 		return true
 	end
 	if string.find(key, "ign") or string.find(key, "ena") then

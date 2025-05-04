@@ -10,10 +10,11 @@ local fmtnum = ExcessiveWithdrawals.fmtnum
 local GetColorDefForValue = ExcessiveWithdrawals.GetColorDefForValue
 
 UserWindow.users = nil
-UserWindow.processing = false
+UserWindow.processing = 0
 
 function UserWindow:Init()
 	ZO_ScrollList_AddDataType(self.listCtrl, 0, "EWUserWindow_Row", 35, function(...) self:LayoutRow(...) end, nil, nil, nil)
+	ZO_ScrollList_AddDataType(self.listCtrl, 1, "EWUserWindow_DateRow", 35, function(...) self:LayoutRow(...) end, nil, nil, nil)
 end
 
 function UserWindow:Open(guildId, userName)
@@ -58,15 +59,34 @@ function UserWindow:UpdateData()
 end
 
 function UserWindow:LayoutRow(rowCtrl, data, _)
-	rowCtrl.nameLabel:SetText(data.name or "-")
+
+	local name
+	if data.cash then
+		if data.cash >= 0 then
+			name = "|cAAFFAACash Donation|r"
+		else
+			name = "|cFFCC99Cash Withdrawal|r"
+		end
+	else
+		if data.qty >= 0 then
+			name = "|cAAFFAAAdded " .. data.qty .. " x|r " .. data.item
+		else
+			name = "|cFFCC99Removed " .. -data.qty .. " x|r " .. data.item
+		end
+	end
+
+	local price = data.price or data.cash
+
+	rowCtrl.nameLabel:SetText(name or "-")
+
 	rowCtrl.dateLabel:SetText(os.date('%Y-%m-%d %H:%M:%S',data.eventTime) or "-")
-	rowCtrl.priceLabel:SetText(fmtnum(data.price, true) or "-")
+	rowCtrl.priceLabel:SetText(fmtnum(price, true) or "-")
 	rowCtrl.balanceLabel:SetText(fmtnum(data.balance, true) or "-")
 
 	rowCtrl.nameLabel:SetWrapMode(TEXT_WRAP_MODE_ELLIPSIS)
 
 	--local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
-	rowCtrl.priceLabel:SetColor(GetColorDefForValue(data.price):UnpackRGBA())
+	rowCtrl.priceLabel:SetColor(GetColorDefForValue(price):UnpackRGBA())
 	rowCtrl.balanceLabel:SetColor(GetColorDefForValue(data.balance):UnpackRGBA())
 end
 
@@ -87,6 +107,21 @@ function UserWindow:ProcessEvent(event)
 	end
 end
 
+local function insertOrConsolidate(transactions, newTxn)
+
+	if newTxn.item then
+		local startTime = newTxn.eventTime - 4*60*60 -- look back 4 hours
+		for i = 1, #transactions do
+			local oldTxn = transactions[i]
+			if oldTxn.eventTime >= startTime and oldTxn.item == newTxn.item then
+				oldTxn.qty = oldTxn.qty + newTxn.qty
+				oldTxn.price = oldTxn.price + newTxn.price
+				return -- Consolidated - return without inserting the new transaction!
+			end
+		end
+	end
+	table.insert(transactions, newTxn)
+end
 
 function UserWindow:ProcessItemEvent(userObj, event, eventTime, info)
 	--local category = event:GetEventCategory()
@@ -98,22 +133,24 @@ function UserWindow:ProcessItemEvent(userObj, event, eventTime, info)
 
 	if type == GUILD_HISTORY_BANKED_ITEM_EVENT_ADDED then
 		userObj.balance = userObj.balance + price
-		table.insert(userObj.transactions, {
+		insertOrConsolidate(userObj.transactions, {
 			eventTime = eventTime,
-			name = "|cAAFFAAAdded " .. qty .. " x|r " .. info.itemLink,
-			price = price,
-			--balance = userObj.balance
+			item = info.itemLink,
+			qty = qty,
+			--name = "|cAAFFAAAdded " .. qty .. " x|r " .. info.itemLink,
+			price = price
 		})
 		--userObj.itemsDeposit = userObj.itemsDeposit + qty
 		--userObj.itemsDepositVal = userObj.itemsDepositVal + price
 		if ExcessiveWithdrawals.db.logging then d(string.format("%s - %s: +%d %s (worth %d)", ExcessiveWithdrawals.displayName, userObj.userName, qty, info.itemLink, price)) end
 	elseif type == GUILD_HISTORY_BANKED_ITEM_EVENT_REMOVED then
 		userObj.balance = userObj.balance - price
-		table.insert(userObj.transactions, {
+		insertOrConsolidate(userObj.transactions, {
 			eventTime = eventTime,
-			name = "|cFFCC99Removed " .. qty .. " x|r " .. info.itemLink,
-			price = -price,
-			--balance = userObj.balance
+			item = info.itemLink,
+			qty = -qty,
+			--name = "|cFFCC99Removed " .. qty .. " x|r " .. info.itemLink,
+			price = -price
 		})
 		--userObj.itemsWithdraw = userObj.itemsWithdraw + qty
 		--userObj.itemsWithdrawVal = userObj.itemsWithdrawVal + price
@@ -128,21 +165,19 @@ function UserWindow:ProcessCashEvent(userObj, event, eventTime, info)
 	if amount then
 		if type == GUILD_HISTORY_BANKED_CURRENCY_EVENT_DEPOSITED then
 			userObj.balance = userObj.balance + amount
-			table.insert(userObj.transactions, {
+			insertOrConsolidate(userObj.transactions, {
 				eventTime = eventTime,
-				name = "|cAAFFAACash Donation|r",
-				price = amount,
-				--balance = userObj.balance
+				--name = "|cAAFFAACash Donation|r",
+				cash = amount
 			})
 			--userObj.goldDeposit = userObj.goldDeposit + amount
 			if ExcessiveWithdrawals.db.logging then d(string.format("%s - %s: +%d gold", ExcessiveWithdrawals.displayName, userObj.userName, amount)) end
 		elseif type == GUILD_HISTORY_BANKED_CURRENCY_EVENT_WITHDRAWN then
 			userObj.balance = userObj.balance - amount
-			table.insert(userObj.transactions, {
+			insertOrConsolidate(userObj.transactions, {
 				eventTime = eventTime,
-				name = "|cFFCC99Cash Withdrawal|r",
-				price = -amount,
-				--balance = userObj.balance
+				--name = "|cFFCC99Cash Withdrawal|r",
+				cash = -amount
 			})
 			--userObj.goldWithdraw = userObj.goldWithdraw + amount
 			if ExcessiveWithdrawals.db.logging then d(string.format("%s - %s: -%d gold", ExcessiveWithdrawals.displayName, userObj.userName, amount)) end
@@ -164,8 +199,8 @@ local function processItems(self, lib, guildId, eventCategory)
 	processor:SetStopOnLastCachedEvent(true)
 	processor:SetOnStopCallback(function (reason)
 		d("UserWindow.processing("..eventCategory..") stopped: " .. reason)
-		UserWindow.processing = false
-		UserWindow.spinner:SetHidden(true)
+		UserWindow.processing = UserWindow.processing - 1
+		if UserWindow.processing == 0 then UserWindow.spinner:SetHidden(true) end
 	end)
 
 	--local now = GetTimeStamp()
@@ -176,14 +211,14 @@ local function processItems(self, lib, guildId, eventCategory)
 
 	if not started then
 		d("Failed to start processor for category "..eventCategory)
-		self.processing = false
-		self.spinner:SetHidden(true)
+		self.processing = self.processing - 1
+		if UserWindow.processing == 0 then UserWindow.spinner:SetHidden(true) end
 	end
 end
 
 function UserWindow:FetchTransactions()
 	self.users = {}
-	self.processing = true
+	self.processing = 2
 	self.spinner:SetHidden(false)
 
 	LibHistoire:OnReady(function(lib)
@@ -195,7 +230,7 @@ end
 function UserWindow:ProcessBalances(sortedTransactions)
 	local balance = 0
 	for i = #sortedTransactions, 1, -1 do
-		balance = balance + sortedTransactions[i].price
+		balance = balance + (sortedTransactions[i].price or sortedTransactions[i].cash)
 		sortedTransactions[i].balance = balance
 	end
 end

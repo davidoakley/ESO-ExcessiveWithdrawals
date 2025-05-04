@@ -35,11 +35,24 @@
                     <Dimensions y="35" />
                 </Label>
             </Controls>
-            <OnMouseUp>
-                d("OnMouseUp EWUserWindow_Row")
-                --if upInside then Navigator.MapTab:CategoryRowMouseUp(self, button) end
-            </OnMouseUp>
         </Control>
+
+        <Control name="EWUserWindow_DateRow" virtual="true" mouseEnabled="true">
+            <OnInitialized>
+                self.dateLabel = self:GetNamedChild("Date")
+            </OnInitialized>
+
+            <Dimensions y="35"/>
+            <Controls>
+                <Label name="$(parent)Date" inherits="ZO_SelectableLabel" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" verticalAlignment="CENTER" wrapMode="ELLIPSIS" mouseEnabled="false" text="Date">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Dimensions y="35" />
+                </Label>
+            </Controls>
+        </Control>
+
+
 
         <Control name="EWUserWindow_HeadingRow" virtual="true" mouseEnabled="true">
             <Dimensions y="48"/>
@@ -87,7 +100,8 @@
             </OnUpdate>
 
             <OnResizeStop>
-                ZO_ScrollList_RefreshVisible(self.listCtrl)
+                self:UpdateData()
+                --ZO_ScrollList_RefreshVisible(self.listCtrl)
             </OnResizeStop>
 
             <OnShow>
