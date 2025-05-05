@@ -34,6 +34,12 @@ function UserWindow:Close()
 	self:SetHidden(true)
 end
 
+function UserWindow:Copy()
+	if ExcessiveWithdrawals:CheckData(self.userName) == false then return true end
+	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals:GetUserHistory(self.userName))
+	ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.POSITIVE_CLICK, "Summary written to chat window")
+end
+
 local function eventTimeComparison(x,y)
 	return x.eventTime > y.eventTime
 end
@@ -55,7 +61,7 @@ function UserWindow:UpdateData()
 	ZO_ScrollList_Clear(self.listCtrl)
 	local scrollData = ZO_ScrollList_GetDataList(self.listCtrl)
 
-	d("Showing "..#transactions.." transactions")
+	--d("Showing "..#transactions.." transactions")
 	for i = 1, #transactions do
 		local entry = ZO_ScrollList_CreateDataEntry(0, transactions[i])
 		table.insert(scrollData, entry)
@@ -122,6 +128,9 @@ local function insertOrConsolidate(transactions, newTxn)
 			if oldTxn.eventTime >= startTime and oldTxn.item == newTxn.item then
 				oldTxn.qty = oldTxn.qty + newTxn.qty
 				oldTxn.price = oldTxn.price + newTxn.price
+				if oldTxn.qty == 0 then -- Cancelled out!
+					table.remove(transactions, i)
+				end
 				return -- Consolidated - return without inserting the new transaction!
 			end
 		end
@@ -195,7 +204,6 @@ function UserWindow:ProcessCashEvent(userObj, event, eventTime, info)
 end
 
 local function processItems(self, lib, guildId, eventCategory)
-	d("process")
 	local processor = lib:CreateGuildHistoryProcessor(guildId, eventCategory, "ExcessiveWithdrawals_UserWindow")
 	if not processor then
 		-- the processor could not be created
@@ -204,9 +212,12 @@ local function processItems(self, lib, guildId, eventCategory)
 
 	processor:SetStopOnLastCachedEvent(true)
 	processor:SetOnStopCallback(function (reason)
-		d("UserWindow.processing("..eventCategory..") stopped: " .. reason)
+		--d("UserWindow.processing("..eventCategory..") stopped: " .. reason)
 		UserWindow.processing = UserWindow.processing - 1
-		if UserWindow.processing == 0 then UserWindow.spinnerCtrl:SetHidden(true) end
+		if UserWindow.processing == 0 then
+			UserWindow.spinnerCtrl:Hide()
+			--d("HIDE")
+		end
 	end)
 
 	--local now = GetTimeStamp()
@@ -218,14 +229,14 @@ local function processItems(self, lib, guildId, eventCategory)
 	if not started then
 		d("Failed to start processor for category "..eventCategory)
 		self.processing = self.processing - 1
-		if UserWindow.processing == 0 then UserWindow.spinnerCtrl:SetHidden(true) end
+		if UserWindow.processing == 0 then UserWindow.spinnerCtrl:Hide() end
 	end
 end
 
 function UserWindow:FetchTransactions()
 	self.users = {}
 	self.processing = 2
-	self.spinnerCtrl:SetHidden(false)
+	self.spinnerCtrl:Show()
 
 	LibHistoire:OnReady(function(lib)
 		processItems(self, lib, self.guildId, GUILD_HISTORY_EVENT_CATEGORY_BANKED_ITEM)

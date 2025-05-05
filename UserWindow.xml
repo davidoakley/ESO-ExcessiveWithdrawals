@@ -184,22 +184,37 @@
                     <Controls>
                         <Button name="$(parent)CloseButton">
                             <Dimensions y="25" x="25" />
-                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="4" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="12" />
                             <Textures normal="esoui/art/buttons/decline_up.dds" pressed="esoui/art/buttons/decline_down.dds" mouseOver="esoui/art/buttons/decline_over.dds" />
                             <OnClicked>ExcessiveWithdrawals.userWindow:Close()</OnClicked>
                         </Button>
 
+                        <Button name="$(parent)CopyButton" inherits="ZO_ButtonBehaviorClickSound">
+                            <Dimensions y="25" x="25" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$(parent)CloseButton" offsetX="-8" offsetY="0" />
+                            <Textures normal="esoui/art/miscellaneous/clipboard_up.dds" pressed="esoui/art/miscellaneous/clipboard_down.dds" mouseOver="esoui/art/miscellaneous/clipboard_over.dds" />
+                            <OnClicked>
+                                ExcessiveWithdrawals.userWindow:Copy()
+                            </OnClicked>
+                            <OnMouseEnter>
+                                ZO_Tooltips_ShowTextTooltip(self, LEFT, "Write summary to the chat window")
+                            </OnMouseEnter>
+                            <OnMouseExit>
+                                ZO_Tooltips_HideTextTooltip()
+                            </OnMouseExit>
+                        </Button>
+
                         <Label name="$(parent)Label" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" text="@UserName">
 <!--                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="4" offsetY="10" />-->
-                            <Anchor point="TOP" relativeTo="$(parent)" offsetX="0" offsetY="10" />
+                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="10" />
                         </Label>
 
                         <!-- Loading spinner -->
                         <Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="false" >
-                            <Anchor point="LEFT" relativePoint="LEFT" relativeTo="$(parent)" offsetX="4" offsetY="4" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$(parent)CopyButton" offsetX="-8" offsetY="0" />
                             <Dimensions y="20" />
                             <OnInitialized>
-                                ZO_Loading_Initialize(self, GetString(SI_INTERFACE_OPTIONS_DEFERRED_LOADING_TEXT))
+                                ZO_Loading_Initialize(self, "")
                             </OnInitialized>
                         </Control>
                     </Controls>

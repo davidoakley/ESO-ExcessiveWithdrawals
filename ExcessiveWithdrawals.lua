@@ -4,10 +4,9 @@ ExcessiveWithdrawals = {
 	addonName = "Excessive Withdrawals",
 	displayName = "|cFF8000Excessive Withdrawals|r",
 	defaults = {
-		building = false,
 		warnings = false,
 		gUser = "",
-		ignoreAmt = 10000,
+		ignoreAmt = 100000,
 		guilds = {}
 	},
 	processors = {}
@@ -148,7 +147,6 @@ function ExcessiveWithdrawals:GetProcessor(lib, guildId, eventCategory)
 end
 
 local function processItems(self, lib, guildId, eventCategory)
-	d("process")
 	local processor = self:GetProcessor(lib, guildId, eventCategory) --lib:CreateGuildHistoryProcessor(guildId, eventCategory, "ExcessiveWithdrawals")
 	if not processor then
 		-- the processor could not be created
@@ -319,11 +317,23 @@ function ExcessiveWithdrawals:ShowUserHistory(userName)
 	CHAT_SYSTEM:AddMessage("Guild Bank Total Values --\n  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot))
 end
 
+function ExcessiveWithdrawals:GetUserHistory(userName)
+	if userName:sub(1, 1) ~= "@" then userName = "@" .. userName end
+	if ExcessiveWithdrawals:CheckData(userName) == false then return true end
+	local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(userName)]
+	local out = ExcessiveWithdrawals.addonName .. ' -- ' .. userData.userName .. '\n |  Items Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDeposit) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDepositVal) .. ' gold\n |  Items Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdraw) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdrawVal) .. ' gold\n |  Gold Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.goldDeposit) .. '\n |  Gold Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.goldWithdraw) .. '\n |  First Scanned on ' .. GetDateStringFromTimestamp(userData.initialScan) .. "\n"
+	itemTot = userData.itemsDepositVal - userData.itemsWithdrawVal
+	goldTot = userData.goldDeposit - userData.goldWithdraw
+	grandTot = itemTot + goldTot
+	out = out .. " Guild Bank Total Values --\n |  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot)
+	return out
+end
+
 function ExcessiveWithdrawals.AdjustContextMenus()
 	local ShowPlayerContextMenu = CHAT_SYSTEM.ShowPlayerContextMenu
 	CHAT_SYSTEM.ShowPlayerContextMenu = function(self, displayName, rawName)
 		ShowPlayerContextMenu(self, displayName, rawName)
-		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(displayName) end )
+		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, displayName) end )
 		--d("DisplayName: " .. displayName)
 		if ZO_Menu_GetNumMenuItems() > 0 then
 			ShowMenu()
@@ -344,7 +354,7 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 			--In case someone messed around with the guild roster... >_<
 			--data.characterName = string.gsub(data.characterName, "|ceeeeee", "")
 			--d(data.displayName)
-			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(data.displayName) end )
+			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, data.displayName) end )
 			self:ShowMenu(control)
 		end
 	end
