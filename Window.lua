@@ -8,6 +8,7 @@ local GetColorDefForValue = ExcessiveWithdrawals.GetColorDefForValue
 local fmtnum = ExcessiveWithdrawals.fmtnum
 
 function Window:Init()
+	self.guildId = ExcessiveWithdrawals.db.guildId
 	ZO_ScrollList_AddDataType(self.userListCtrl, 0, "EWWindow_UserRow", 35, function(...) self:LayoutRow(...) end, nil, nil, nil)
 end
 
@@ -15,6 +16,28 @@ function Window:Open()
 	self:SetHidden(false)
 
 	self.titleLabel:SetText("Excessive Withdrawals - " .. GetGuildName(ExcessiveWithdrawals.db.guildId))
+
+	self:UpdateData()
+
+	if not not ExcessiveWithdrawals.db.guilds or not ExcessiveWithdrawals.db.guilds[self.guildId] or #ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent == 0 then
+		ExcessiveWithdrawals:MonitorGuild()
+	end
+
+	EVENT_MANAGER:RegisterForUpdate(ExcessiveWithdrawals.addonName.."Window", 1000, function() ExcessiveWithdrawals.window:UpdateData() end)
+end
+
+function Window:Close()
+	self:SetHidden(true)
+	EVENT_MANAGER:UnregisterForUpdate(ExcessiveWithdrawals.addonName.."Window")
+end
+
+function Window:UpdateData()
+	if not ExcessiveWithdrawals.db.guilds or not ExcessiveWithdrawals.db.guilds[self.guildId] then return end
+	local currentLastEventTotal = ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[1] + ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[2]
+
+	if currentLastEventTotal == self.lastLastEventTotal then
+		return -- No data has arrived since the last update
+	end
 
 	ZO_ScrollList_Clear(self.userListCtrl)
 	local scrollData = ZO_ScrollList_GetDataList(self.userListCtrl)
@@ -27,10 +50,7 @@ function Window:Open()
 	end
 
 	ZO_ScrollList_Commit(self.userListCtrl)
-end
-
-function Window:Close()
-	self:SetHidden(true)
+	self.lastLastEventTotal = currentLastEventTotal
 end
 
 function Window:OnUserSubmitted(editBox)

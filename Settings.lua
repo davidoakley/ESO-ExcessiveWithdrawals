@@ -58,7 +58,7 @@ function ExcessiveWithdrawals:Menu()
 		{
 			type = "dropdown",
 			name = "Exclude Guild Rank(s)     #",
-			tooltip = "The guild rank(s) to exclude, in the order they appear in the guild pane, and above.\n1 = Guild Master",
+			tooltip = "Exclude this guild rank and higher. These ranks will be shown as cyan in the UI",
 			choices = rankChoices,
 			choicesValues = rankValues,
 			--choices = {"-", 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
@@ -75,19 +75,19 @@ function ExcessiveWithdrawals:Menu()
 			getFunc = function() return self.db.ignoreAmt end,
 			setFunc = function(choice) self.db.ignoreAmt = choice end,
 		},
+		--{
+		--	type = "button",
+		--	name = "Monitor Guild",
+		--	tooltip = "This will start the addon for monitoring the guild bank's history, but only needs to be used after configuring the information above or to see any warnings.",
+		--	width = "half",
+		--	func = function() self:MonitorGuild() end
+		--},
 		{
 			type = "button",
-			name = "Monitor Guild",
-			tooltip = "This will start the addon for monitoring the guild bank's history, but only needs to be used after configuring the information above or to see any warnings.",
-			width = "half",
-			func = function() self:MonitorGuild() end
-		},
-		{
-			type = "button",
-			name = "List Disabled",
-			tooltip = "This will list all usernames and guild bank total value, for gold/items deposited and withdrawn, that have their notifications disabled.",
-			width = "half",
-			func = function() self:ShowDisabled(false) end
+			name = "Show",
+			tooltip = "This will show the Excessive Withdrawals window.",
+			--width = "half",
+			func = function() self.window:Open() end
 		},
 		{
 			type = "header",
@@ -105,8 +105,8 @@ function ExcessiveWithdrawals:Menu()
 		},
 		{
 			type = "dropdown",
-			name = "New Guild Rank               #",
-			tooltip = "The guild rank that you would like to demote players to that exceed the above amount. This should be a rank that does not have guild bank withdrawal permissions.",
+			name = "Demoted Guild Rank               #",
+			tooltip = "The guild rank that you would like to demote players to that exceed the above amount. This should be a rank that does not have guild bank withdrawal permissions. This rank and below will also be shown as orange in the UI",
 			choices = demoteChoices,
 			choicesValues = demoteValues,
 			default = numRanks,
@@ -217,9 +217,10 @@ function ExcessiveWithdrawals:Menu()
 			text = [[
 To open this menu, type: /exwithdraw
 
-List users with excessive withdrawals: /excessive list
+Show Excessive Withdrawals window: /excessive
 
-User's History: /excessive history @USERNAME
+Display user's History: /excessive @USERNAME
+
 Disable notifications: /excessive ignore @USERNAME
                (auto-enabled upon deposit/withdrawal)
 Enable notifications: /excessive enable @USERNAME

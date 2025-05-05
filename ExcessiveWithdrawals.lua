@@ -189,7 +189,7 @@ function ExcessiveWithdrawals:GetUser(user, timestampS)
 	local guildId = self.db.guildId
 
 	if self.db.guilds[guildId].users[string.lower(user)] == nil then
-		d("Creating user "..string.lower(user))
+		d(self.addonName .. ": Creating user "..string.lower(user))
 		self.db.guilds[guildId].users[string.lower(user)] = {
 			userName = user,
 			initialScan = timestampS,

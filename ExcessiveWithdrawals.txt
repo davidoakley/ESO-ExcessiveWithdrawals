@@ -1,9 +1,9 @@
 ## Title: |cFF8000Excessive Withdrawals|r
-## Version 25.1.0b1
+## Version 25.1.1
 ## Author: depeshmood, SirNightstorm
 ## APIVersion: 101045,101046
 ## SavedVariables: ExcessiveWithdrawals_Vars
-## DependsOn: LibHistoire>=1062 LibAddonMenu-2.0>=38
+## DependsOn: LibHistoire>=1069 LibAddonMenu-2.0>=39
 
 ExcessiveWithdrawals.lua
 Utils.lua

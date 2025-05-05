@@ -131,7 +131,9 @@ end
 
 function ExcessiveWithdrawals.GetColorDefForRank(rankIndex)
 	if not rankIndex then return ZO_ColorDef:New("999999") end
-	return rankIndex <= ExcessiveWithdrawals.db.guildRank and ZO_ColorDef:New("99CCFF") or
-				 rankIndex >= ExcessiveWithdrawals.db.demoteRank and ZO_ColorDef:New("FFCC77") or
+	local minRank = ExcessiveWithdrawals.db.guildRank or 1
+	local demoteRank = ExcessiveWithdrawals.db.demoteRank or 999
+	return rankIndex <= minRank and ZO_ColorDef:New("99CCFF") or
+				 rankIndex >= demoteRank and ZO_ColorDef:New("FFCC77") or
 				 ZO_ColorDef:New("AAFFAA")
 end
