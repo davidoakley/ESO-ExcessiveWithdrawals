@@ -1,0 +1,185 @@
+<GuiXml>
+    <Controls>
+
+
+        <Control name="EWWindow_UserRow" virtual="true" mouseEnabled="true">
+            <OnInitialized>
+                self.nameLabel = self:GetNamedChild("Name")
+                self.addedLabel = self:GetNamedChild("Added")
+                self.removedLabel = self:GetNamedChild("Removed")
+                self.donatedLabel = self:GetNamedChild("Donated")
+                self.balanceLabel = self:GetNamedChild("Balance")
+            </OnInitialized>
+            <Dimensions y="35"/>
+            <Controls>
+                <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Balance">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-8" offsetY="0"/>
+                    <Dimensions x="110" y="35" />
+                </Label>
+
+                <Label name="$(parent)Donated" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Donated">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="35" />
+                </Label>
+
+                <Label name="$(parent)Removed" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Removed">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Donated" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="35" />
+                </Label>
+
+                <Label name="$(parent)Added" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Added">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Removed" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="35" />
+                </Label>
+
+                <Label name="$(parent)Name" inherits="ZO_SelectableLabel" font="ZoFontHeader"  mouseEnabled="false" text="Player">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)Added" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                </Label>
+            </Controls>
+            <OnMouseUp>
+                ExcessiveWithdrawals.row = self
+                local data = ZO_ScrollList_GetData(self)
+                if upInside then ExcessiveWithdrawals.userWindow:Open(data.guildId, data.userName) end
+            </OnMouseUp>
+        </Control>
+
+        <Control name="EWWindow_UserListHeadingRow" virtual="true" mouseEnabled="true">
+            <Dimensions y="48"/>
+            <Controls>
+                <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Balance">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-18" offsetY="0"/>
+                    <Dimensions x="110" y="48" />
+                </Label>
+
+                <Label name="$(parent)Donated" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Donated">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="48" />
+                </Label>
+
+                <Label name="$(parent)Removed" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Removed">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Donated" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="48" />
+                </Label>
+
+                <Label name="$(parent)Added" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Added">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Removed" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="110" y="48" />
+                </Label>
+
+                <Label name="$(parent)Name" inherits="ZO_SelectableLabel" font="ZoFontHeader" verticalAlignment="CENTER" mouseEnabled="true" text="Player">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)Added" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                </Label>
+            </Controls>
+        </Control>
+
+
+        <TopLevelControl name="EWWindow" mouseEnabled="true" movable="true" clampedToScreen="true" hidden="true" resizeHandleSize="8" tier="MEDIUM">
+            <Dimensions x="800" y="500" />
+            <DimensionConstraints minX="600" minY="300" />
+            <Anchor point="CENTER" />
+
+            <OnInitialized>
+                ExcessiveWithdrawals.window = self
+                self.userListCtrl = self:GetNamedChild("UserList")
+                self.titleLabel = self:GetNamedChild("HeaderLabel")
+                self.searchEditbox = self:GetNamedChild("HeaderSearchEditbox")
+            </OnInitialized>
+
+            <OnUpdate>
+            </OnUpdate>
+
+            <OnResizeStop>
+                ZO_ScrollList_RefreshVisible(self.userListCtrl)
+            </OnResizeStop>
+
+            <OnShow>
+            </OnShow>
+
+            <Controls>
+                <Backdrop name="$(parent)BG" inherits="ZO_DefaultBackdrop">
+                    <AnchorFill />
+                </Backdrop>
+
+                <Control name="$(parent)Header">
+                    <Dimensions y="55" />
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="0" />
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-8" offsetY="0" />
+                    <Controls>
+                        <Button name="$(parent)CloseButton">
+                            <Dimensions y="25" x="25" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="12" />
+                            <Textures normal="esoui/art/buttons/decline_up.dds" pressed="esoui/art/buttons/decline_down.dds" mouseOver="esoui/art/buttons/decline_over.dds" />
+                            <OnClicked>ExcessiveWithdrawals.window:Close()</OnClicked>
+                        </Button>
+
+                        <Backdrop name="$(parent)Search" tier="HIGH"  inherits="ZO_SingleLineEditBackdrop_Keyboard"  mouseEnabled="true">
+                            <Anchor point="TOPRIGHT" relativeTo="$(parent)CloseButton" relativePoint="TOPLEFT" offsetX="-8" offsetY="2" />
+                            <Dimensions x="200" y="30" />
+
+                            <Controls>
+                                <EditBox name="$(parent)Editbox" maxInputCharacters="30" inherits="ZO_DefaultEditForBackdrop ZO_EditDefaultText" newLineEnabled="true" defaultText="Enter @Username" >
+                                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="2" offsetY="2" />
+                                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" offsetX="-2" offsetY="-2" />
+
+                                    <OnInitialized>
+                                    </OnInitialized>
+                                    <OnEnter>
+                                        ExcessiveWithdrawals.window:OnUserSubmitted(self)
+                                    </OnEnter>
+                                    <OnEscape>
+                                        -- self:LoseFocus()
+                                        SCENE_MANAGER:Hide("worldMap")
+                                    </OnEscape>
+                                    <OnTextChanged>
+                                        --Navigator.log("onTextChanged: pos="..self:GetCursorPosition())
+                                    </OnTextChanged>
+                                    <OnMouseDown>
+                                        self:TakeFocus()
+                                        ZO_EditDefaultText_Disable(self)
+                                    </OnMouseDown>
+                                </EditBox>
+                            </Controls>
+                        </Backdrop>
+
+                        <!-- Mode Icons
+                        achievements_indexicon_summary_up - scroll
+                        tabicon_history_up - history
+                        help_tabicon_emotes_up - happy sad
+
+                        -->
+
+                        <Label name="$(parent)Label" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" text="Excessive Withdrawals">
+                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="10" />
+<!--                            <Anchor point="TOP" relativeTo="$(parent)" offsetX="0" offsetY="10" />-->
+                        </Label>
+                    </Controls>
+                </Control>
+
+                <Texture name="$(parent)TopDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
+                    <Dimensions y="4"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Header" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Header" relativePoint="BOTTOMRIGHT" offsetX="0" offsetY="0"/>
+                </Texture>
+
+                <Control name="$(parent)UserListHeadings" inherits="EWWindow_UserListHeadingRow">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMLEFT" offsetX="8" offsetY="0" />
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="0" />
+                </Control>
+
+                <Texture name="$(parent)UserListHeaderDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
+                    <Dimensions y="4"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)UserListHeadings" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)UserListHeadings" relativePoint="BOTTOMRIGHT" offsetX="0" offsetY="0"/>
+                </Texture>
+
+                <Control name="$(parent)UserList" inherits="ZO_ScrollList">
+                    <Anchor point="TOPLEFT"  relativeTo="$(parent)UserListHeaderDivider" relativePoint="BOTTOMLEFT" offsetY="8" />
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="-8" />
+                </Control>
+            </Controls>
+        </TopLevelControl>
+
+    </Controls>
+</GuiXml>

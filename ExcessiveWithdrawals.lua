@@ -4,10 +4,9 @@ ExcessiveWithdrawals = {
 	addonName = "Excessive Withdrawals",
 	displayName = "|cFF8000Excessive Withdrawals|r",
 	defaults = {
-		building = false,
 		warnings = false,
 		gUser = "",
-		ignoreAmt = 10000,
+		ignoreAmt = 100000,
 		guilds = {}
 	},
 	processors = {}
@@ -20,30 +19,37 @@ function ExcessiveWithdrawals:ResetGuild(guildId)
 	}
 end
 
-local function fmtnum(val)
-	return zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
+local function fmtnum(val, showPositive)
+	if val < 0 then
+		return "-"..zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(-val)))
+	else
+		return (showPositive and "+" or "") .. zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
+	end
+end
+ExcessiveWithdrawals.fmtnum = fmtnum
+
+function getRankIndex(guildId, userName)
+	local _, _, rankIndex, _, _ = GetGuildMemberInfo(guildId, GetGuildMemberIndexFromDisplayName(guildId, userName))
+	return rankIndex
 end
 
-function ExcessiveWithdrawals:UserSummary(userName, userData)
-	local entries = {}
-	if userData.itemsDepositVal > 0 or userData.itemsWithdrawVal > 0 then
-		local entry = "items "
-		if userData.itemsDepositVal > 0 then entry = entry .. "|c00FF00+" .. fmtnum(userData.itemsDepositVal) .. "|r" end
-		if userData.itemsWithdrawVal > 0 then entry = entry .. "|cFF8000-" .. fmtnum(userData.itemsWithdrawVal) .. "|r" end
-		table.insert(entries, entry)
-	end
-	if userData.goldDeposit > 0 or userData.goldWithdraw > 0 then
-		local entry = "gold "
-		if userData.goldDeposit > 0 then entry = entry .. "|c00FF00+" .. fmtnum(userData.goldDeposit) .. "|r" end
-		if userData.goldWithdraw > 0 then entry = entry .. "|cFF8000-" .. fmtnum(userData.goldWithdraw) .. "|r" end
-		table.insert(entries, entry)
+function ExcessiveWithdrawals:UserSummary(guildId, userName, userData)
+	local summary = {
+		guildId = guildId,
+		userName = userName,
+		rankIndex = getRankIndex(guildId, userName),
+		balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
+	}
+
+	for key, value in pairs(userData) do
+		summary[key] = value
 	end
 
-	local balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
-	table.insert(entries, "= |cFF8000-" .. fmtnum(-balance) .. "|r")
+	return summary
+end
 
-	userName = string.format("|H0:character:%s|h%s|h", userName, userName)
-	return userName .. " (" .. table.concat(entries, " ") .. ")"
+local function balanceComparison(x,y)
+	return x.balance < y.balance
 end
 
 function ExcessiveWithdrawals:AnalyzeUsers(guildId)
@@ -60,16 +66,16 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId)
 		end
 	end
 
-	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. " -- |cFF8000Users exceeding guild bank allowance:|r")
-
 	local results = {}
 	for user, arr in pairs(self.db.guilds[guildId].users) do
 		if arr.ignore ~= true and userRanks[user] ~= true then
 			local balance = arr.goldDeposit - arr.goldWithdraw + arr.itemsDepositVal - arr.itemsWithdrawVal
 			if (dAmt ~= nil and (dAmt + balance) < 0) or (ignoreAmt + balance) < 0 then
+				local summary = self:UserSummary(guildId, arr.userName, arr)
 				if userRanks[user] == nil then
-					table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr) .. " - |cFF8000no longer a member!|r")
+					summary.warning = "no longer a member!"
 				else
+					summary.member = true
 					local uRank
 					if dAmt ~= nil and (dAmt + balance) < 0 then
 						_, _, uRank, _, _ = GetGuildMemberInfo(guildId, GetGuildMemberIndexFromDisplayName(guildId, arr.userName))
@@ -81,19 +87,51 @@ function ExcessiveWithdrawals:AnalyzeUsers(guildId)
 							end, 1000 * uRank)
 							uRank = uRank + 1
 						end
-						table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr) .. " - |cFF8000demoted!|r")
-					else
-						table.insert(results, " - |r" .. self:UserSummary(arr.userName, arr))
+						summary.warning = "demoted!"
 					end
 				end
+				table.insert(results, summary)
 				found = true
 			end
 		end
 	end
+
+	table.sort(results, balanceComparison)
+
+	return results
+end
+
+function ExcessiveWithdrawals:ListAnalysis(results)
+	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. " -- |cFF8000Users exceeding guild bank allowance:|r")
+
 	if #results then
-		table.sort(results)
+
 		for i = 1, #results do
-			CHAT_SYSTEM:AddMessage(results[i])
+			local userData = results[i]
+
+			local entries = {}
+			if userData.itemsDepositVal > 0 or userData.itemsWithdrawVal > 0 then
+				local entry = "items "
+				if userData.itemsDepositVal > 0 then entry = entry .. "+" .. fmtnum(userData.itemsDepositVal)  end
+				if userData.itemsWithdrawVal > 0 then entry = entry .. "-" .. fmtnum(userData.itemsWithdrawVal) end
+				table.insert(entries, entry)
+			end
+			if userData.goldDeposit > 0 or userData.goldWithdraw > 0 then
+				local entry = "gold "
+				if userData.goldDeposit > 0 then entry = entry .. "+" .. fmtnum(userData.goldDeposit) end
+				if userData.goldWithdraw > 0 then entry = entry .. "-" .. fmtnum(userData.goldWithdraw) end
+				table.insert(entries, entry)
+			end
+
+			local balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
+			table.insert(entries, "= -" .. fmtnum(-balance))
+
+			local text =  userData.userName .. " (" .. table.concat(entries, " ") .. ")"
+			if userData.warning then
+				text = text .. " - " .. userData.warning
+			end
+
+			CHAT_SYSTEM:AddMessage(text)
 		end
 	else
 		CHAT_SYSTEM:AddMessage(" - none!")
@@ -109,7 +147,6 @@ function ExcessiveWithdrawals:GetProcessor(lib, guildId, eventCategory)
 end
 
 local function processItems(self, lib, guildId, eventCategory)
-	d("process")
 	local processor = self:GetProcessor(lib, guildId, eventCategory) --lib:CreateGuildHistoryProcessor(guildId, eventCategory, "ExcessiveWithdrawals")
 	if not processor then
 		-- the processor could not be created
@@ -128,20 +165,6 @@ local function processItems(self, lib, guildId, eventCategory)
 	if not started then
 		d("Failed to start processor for category "..eventCategory)
 	end
-
-	--local started = processor:StartIteratingTimeRange(now - 24*60*60, now, function(event)
-	--	self:ProcessEvent(event)
-	--	self.db.lastEvent[guildName][eventCategory] = event:GetEventInfo().eventId
-	--end, function(reason)
-	--	if (reason == LibHistoire.StopReason.ITERATION_COMPLETED or reason == LibHistoire.StopReason.LAST_CACHED_EVENT_REACHED) then
-	--		-- all events in the time range have been processed
-	--		d("FINISHED")
-	--		self:AnalyzeUsers(guildID, guildName)
-	--	else
-	--		d("Iterator failed to finish, reason "..reason)
-	--		-- the iteration has stopped early for some reason and not all events have been processed
-	--	end
-	--end)
 end
 
 function ExcessiveWithdrawals:MonitorGuild()
@@ -238,15 +261,19 @@ end
 function ExcessiveWithdrawals:CheckData(user)
 	if ExcessiveWithdrawals.db.guildId == nil or ExcessiveWithdrawals.db.guildId == 0 then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: No guild is selected.|r\nType "/exwithdraw" to configure.')
+		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, "No guild is selected")
 		return false
 	elseif ExcessiveWithdrawals.db.guilds[self.db.guildId] == nil then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: No data collected for ' .. GetGuildName(self.db.guildId) .. '.')
+		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, 'No data collected for ' .. GetGuildName(self.db.guildId))
 		return false
 	elseif user == nil or user == "" then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: You must enter a username.')
+		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, "You must enter a username")
 		return false
 	elseif ExcessiveWithdrawals.db.guilds[self.db.guildId].users[string.lower(user)] == nil then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: ' .. user .. ' does not currently have any statistics.')
+		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, user .. ' does not currently have any statistics')
 		return false
 	end
 	return true
@@ -290,11 +317,23 @@ function ExcessiveWithdrawals:ShowUserHistory(userName)
 	CHAT_SYSTEM:AddMessage("Guild Bank Total Values --\n  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot))
 end
 
+function ExcessiveWithdrawals:GetUserHistory(userName)
+	if userName:sub(1, 1) ~= "@" then userName = "@" .. userName end
+	if ExcessiveWithdrawals:CheckData(userName) == false then return true end
+	local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(userName)]
+	local out = ExcessiveWithdrawals.addonName .. ' -- ' .. userData.userName .. '\n |  Items Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDeposit) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsDepositVal) .. ' gold\n |  Items Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdraw) .. '   value: ' .. ExcessiveWithdrawals:CommaValue(userData.itemsWithdrawVal) .. ' gold\n |  Gold Deposited: ' .. ExcessiveWithdrawals:CommaValue(userData.goldDeposit) .. '\n |  Gold Withdrawn: ' .. ExcessiveWithdrawals:CommaValue(userData.goldWithdraw) .. '\n |  First Scanned on ' .. GetDateStringFromTimestamp(userData.initialScan) .. "\n"
+	itemTot = userData.itemsDepositVal - userData.itemsWithdrawVal
+	goldTot = userData.goldDeposit - userData.goldWithdraw
+	grandTot = itemTot + goldTot
+	out = out .. " Guild Bank Total Values --\n |  Items: " .. ExcessiveWithdrawals:CommaValue(itemTot) .. "\n |  Gold: " .. ExcessiveWithdrawals:CommaValue(goldTot) .. "\n |  Grand Total: " .. ExcessiveWithdrawals:CommaValue(grandTot)
+	return out
+end
+
 function ExcessiveWithdrawals.AdjustContextMenus()
 	local ShowPlayerContextMenu = CHAT_SYSTEM.ShowPlayerContextMenu
 	CHAT_SYSTEM.ShowPlayerContextMenu = function(self, displayName, rawName)
 		ShowPlayerContextMenu(self, displayName, rawName)
-		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(displayName) end )
+		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, displayName) end )
 		--d("DisplayName: " .. displayName)
 		if ZO_Menu_GetNumMenuItems() > 0 then
 			ShowMenu()
@@ -315,7 +354,7 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 			--In case someone messed around with the guild roster... >_<
 			--data.characterName = string.gsub(data.characterName, "|ceeeeee", "")
 			--d(data.displayName)
-			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals:ShowUserHistory(data.displayName) end )
+			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, data.displayName) end )
 			self:ShowMenu(control)
 		end
 	end
@@ -340,6 +379,9 @@ function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
 		ExcessiveWithdrawals:MonitorGuild()
 	end
 	ExcessiveWithdrawals.AdjustContextMenus()
+
+	ExcessiveWithdrawals.window:Init()
+	ExcessiveWithdrawals.userWindow:Init()
 end
 
 EVENT_MANAGER:RegisterForEvent(ExcessiveWithdrawals.name, EVENT_ADD_ON_LOADED, ExcessiveWithdrawals.OnAddOnLoaded)
