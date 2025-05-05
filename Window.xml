@@ -14,22 +14,22 @@
             <Controls>
                 <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Balance">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-8" offsetY="0"/>
-                    <Dimensions x="120" y="35" />
+                    <Dimensions x="110" y="35" />
                 </Label>
 
                 <Label name="$(parent)Donated" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Donated">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="35" />
+                    <Dimensions x="110" y="35" />
                 </Label>
 
                 <Label name="$(parent)Removed" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Removed">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Donated" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="35" />
+                    <Dimensions x="110" y="35" />
                 </Label>
 
                 <Label name="$(parent)Added" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="Added">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Removed" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="35" />
+                    <Dimensions x="110" y="35" />
                 </Label>
 
                 <Label name="$(parent)Name" inherits="ZO_SelectableLabel" font="ZoFontHeader"  mouseEnabled="false" text="Player">
@@ -38,7 +38,6 @@
                 </Label>
             </Controls>
             <OnMouseUp>
-                d("OnMouseUp EWWindow_UserRow")
                 ExcessiveWithdrawals.row = self
                 local data = ZO_ScrollList_GetData(self)
                 if upInside then ExcessiveWithdrawals.userWindow:Open(data.guildId, data.userName) end
@@ -50,22 +49,22 @@
             <Controls>
                 <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Balance">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-18" offsetY="0"/>
-                    <Dimensions x="120" y="48" />
+                    <Dimensions x="110" y="48" />
                 </Label>
 
                 <Label name="$(parent)Donated" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Donated">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="48" />
+                    <Dimensions x="110" y="48" />
                 </Label>
 
                 <Label name="$(parent)Removed" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Removed">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Donated" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="48" />
+                    <Dimensions x="110" y="48" />
                 </Label>
 
                 <Label name="$(parent)Added" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Added">
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Removed" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
-                    <Dimensions x="120" y="48" />
+                    <Dimensions x="110" y="48" />
                 </Label>
 
                 <Label name="$(parent)Name" inherits="ZO_SelectableLabel" font="ZoFontHeader" verticalAlignment="CENTER" mouseEnabled="true" text="Player">
@@ -78,13 +77,14 @@
 
         <TopLevelControl name="EWWindow" mouseEnabled="true" movable="true" clampedToScreen="true" hidden="true" resizeHandleSize="8" tier="MEDIUM">
             <Dimensions x="800" y="500" />
-            <DimensionConstraints minX="400" minY="300" />
+            <DimensionConstraints minX="600" minY="300" />
             <Anchor point="CENTER" />
 
             <OnInitialized>
                 ExcessiveWithdrawals.window = self
                 self.userListCtrl = self:GetNamedChild("UserList")
                 self.titleLabel = self:GetNamedChild("HeaderLabel")
+                self.searchEditbox = self:GetNamedChild("HeaderSearchEditbox")
             </OnInitialized>
 
             <OnUpdate>
@@ -109,36 +109,50 @@
                     <Controls>
                         <Button name="$(parent)CloseButton">
                             <Dimensions y="25" x="25" />
-                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="4" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT" relativeTo="$(parent)" offsetX="-4" offsetY="12" />
                             <Textures normal="esoui/art/buttons/decline_up.dds" pressed="esoui/art/buttons/decline_down.dds" mouseOver="esoui/art/buttons/decline_over.dds" />
                             <OnClicked>ExcessiveWithdrawals.window:Close()</OnClicked>
                         </Button>
 
-                        <EditBox name="$(parent)UserEditbox" maxInputCharacters="30" inherits="ZO_DefaultEditForBackdrop ZO_EditDefaultText" newLineEnabled="true" >
-                            <!--<Anchor point="TOPLEFT" relativeTo="$(parent)Filter" relativePoint="TOPRIGHT" offsetX="0" offsetY="-1" />-->
-                            <Anchor point="TOPRIGHT" relativeTo="$(parent)CloseButton" relativePoint="TOPLEFT" offsetX="-4" offsetY="0" />
-                            <Dimensions x="140" y="25" />
-                            <OnInitialized>
-                            </OnInitialized>
-                            <OnEnter>
-                                ExcessiveWithdrawals.window:OnUserSubmitted()
-                            </OnEnter>
-                            <OnEscape>
-                                -- self:LoseFocus()
-                                SCENE_MANAGER:Hide("worldMap")
-                            </OnEscape>
-                            <OnTextChanged>
-                                --Navigator.log("onTextChanged: pos="..self:GetCursorPosition())
-                            </OnTextChanged>
-                            <OnMouseDown>
-                                self:TakeFocus()
-                                ZO_EditDefaultText_Disable(self)
-                            </OnMouseDown>
-                        </EditBox>
+                        <Backdrop name="$(parent)Search" tier="HIGH"  inherits="ZO_SingleLineEditBackdrop_Keyboard"  mouseEnabled="true">
+                            <Anchor point="TOPRIGHT" relativeTo="$(parent)CloseButton" relativePoint="TOPLEFT" offsetX="-8" offsetY="2" />
+                            <Dimensions x="200" y="30" />
+
+                            <Controls>
+                                <EditBox name="$(parent)Editbox" maxInputCharacters="30" inherits="ZO_DefaultEditForBackdrop ZO_EditDefaultText" newLineEnabled="true" defaultText="Enter @Username" >
+                                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="2" offsetY="2" />
+                                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)" offsetX="-2" offsetY="-2" />
+
+                                    <OnInitialized>
+                                    </OnInitialized>
+                                    <OnEnter>
+                                        ExcessiveWithdrawals.window:OnUserSubmitted(self)
+                                    </OnEnter>
+                                    <OnEscape>
+                                        -- self:LoseFocus()
+                                        SCENE_MANAGER:Hide("worldMap")
+                                    </OnEscape>
+                                    <OnTextChanged>
+                                        --Navigator.log("onTextChanged: pos="..self:GetCursorPosition())
+                                    </OnTextChanged>
+                                    <OnMouseDown>
+                                        self:TakeFocus()
+                                        ZO_EditDefaultText_Disable(self)
+                                    </OnMouseDown>
+                                </EditBox>
+                            </Controls>
+                        </Backdrop>
+
+                        <!-- Mode Icons
+                        achievements_indexicon_summary_up - scroll
+                        tabicon_history_up - history
+                        help_tabicon_emotes_up - happy sad
+
+                        -->
 
                         <Label name="$(parent)Label" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" text="Excessive Withdrawals">
-<!--                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="4" offsetY="10" />-->
-                            <Anchor point="TOP" relativeTo="$(parent)" offsetX="0" offsetY="10" />
+                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="10" />
+<!--                            <Anchor point="TOP" relativeTo="$(parent)" offsetX="0" offsetY="10" />-->
                         </Label>
                     </Controls>
                 </Control>

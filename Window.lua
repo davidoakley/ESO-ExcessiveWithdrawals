@@ -33,6 +33,13 @@ function Window:Close()
 	self:SetHidden(true)
 end
 
+function Window:OnUserSubmitted(editBox)
+	local userName = editBox:GetText()
+	if userName:sub(1, 1) ~= "@" then userName = "@" .. userName end
+	if ExcessiveWithdrawals:CheckData(userName) == false then return true end
+	ExcessiveWithdrawals.userWindow:Open(ExcessiveWithdrawals.db.guildId, userName)
+end
+
 function Window:LayoutRow(rowCtrl, data, _)
 	local rankIcon = zo_iconFormatInheritColor(GetFinalGuildRankTextureSmall(data.guildId, data.rankIndex), 32, 32)
 	local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
