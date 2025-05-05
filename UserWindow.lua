@@ -39,12 +39,18 @@ local function eventTimeComparison(x,y)
 end
 
 function UserWindow:UpdateData()
-	if not self.users or not self.users[self.userName].transactions then
+	local userObj = ExcessiveWithdrawals:GetUser(self.userName, GetTimeStamp())
+	local summary = ExcessiveWithdrawals:UserSummary(self.guildId, self.userName, userObj)
+	summary.member = GetGuildMemberIndexFromDisplayName(self.guildId, self.userName) and true
+	self:SetSummary(summary)
+
+	if not self.users or not self.users[self.userName] or not self.users[self.userName].transactions then
 		return
 	end
 	local transactions = self.users[self.userName].transactions
 	table.sort(transactions, eventTimeComparison)
-	self:ProcessBalances(transactions)
+	local balance = userObj.goldDeposit - userObj.goldWithdraw + userObj.itemsDepositVal - userObj.itemsWithdrawVal
+	self:ProcessBalances(transactions, balance)
 
 	ZO_ScrollList_Clear(self.listCtrl)
 	local scrollData = ZO_ScrollList_GetDataList(self.listCtrl)
@@ -200,7 +206,7 @@ local function processItems(self, lib, guildId, eventCategory)
 	processor:SetOnStopCallback(function (reason)
 		d("UserWindow.processing("..eventCategory..") stopped: " .. reason)
 		UserWindow.processing = UserWindow.processing - 1
-		if UserWindow.processing == 0 then UserWindow.spinner:SetHidden(true) end
+		if UserWindow.processing == 0 then UserWindow.spinnerCtrl:SetHidden(true) end
 	end)
 
 	--local now = GetTimeStamp()
@@ -212,14 +218,14 @@ local function processItems(self, lib, guildId, eventCategory)
 	if not started then
 		d("Failed to start processor for category "..eventCategory)
 		self.processing = self.processing - 1
-		if UserWindow.processing == 0 then UserWindow.spinner:SetHidden(true) end
+		if UserWindow.processing == 0 then UserWindow.spinnerCtrl:SetHidden(true) end
 	end
 end
 
 function UserWindow:FetchTransactions()
 	self.users = {}
 	self.processing = 2
-	self.spinner:SetHidden(false)
+	self.spinnerCtrl:SetHidden(false)
 
 	LibHistoire:OnReady(function(lib)
 		processItems(self, lib, self.guildId, GUILD_HISTORY_EVENT_CATEGORY_BANKED_ITEM)
@@ -227,10 +233,42 @@ function UserWindow:FetchTransactions()
 	end)
 end
 
-function UserWindow:ProcessBalances(sortedTransactions)
-	local balance = 0
-	for i = #sortedTransactions, 1, -1 do
-		balance = balance + (sortedTransactions[i].price or sortedTransactions[i].cash)
+function UserWindow:ProcessBalances(sortedTransactions, endBalance)
+	--local balance = 0
+	--for i = #sortedTransactions, 1, -1 do
+	--	balance = balance + (sortedTransactions[i].price or sortedTransactions[i].cash)
+	--	sortedTransactions[i].balance = balance
+	--end
+	local balance = endBalance
+	for i = 1, #sortedTransactions do
 		sortedTransactions[i].balance = balance
+		balance = balance - (sortedTransactions[i].price or sortedTransactions[i].cash)
 	end
+end
+
+function UserWindow:SetSummary(data)
+
+	--local _, _, rankIndex, _, _ = GetGuildMemberInfo(self.guildId, GetGuildMemberIndexFromDisplayName(self.guildId, self.userName))
+	local rankName = data.member and GetGuildRankCustomName(self.guildId, data.rankIndex) or "Not a member"
+
+	--self.summaryCtrl.nameLabel:SetText(data.userName or "-")
+	self.summaryCtrl.addedLabel:SetText(fmtnum(data.itemsDepositVal) or "-")
+	self.summaryCtrl.removedLabel:SetText(fmtnum(data.itemsWithdrawVal) or "-")
+	local cashDonated = data.goldDeposit - data.goldWithdraw
+	self.summaryCtrl.donatedLabel:SetText(fmtnum(cashDonated) or "-")
+	self.summaryCtrl.balanceLabel:SetText((fmtnum(data.balance)) or "-")
+	self.summaryCtrl.rankLabel:SetText(rankName or "-")
+
+	--local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
+	local colourOverride = not data.member and ZO_ColorDef:New("999999")
+	--local colour = colourOverride or ZO_DEFAULT_ENABLED_COLOR
+
+	--self.summaryCtrl.nameLabel:SetColor(colour:UnpackRGBA())
+	self.summaryCtrl.addedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())
+	self.summaryCtrl.removedLabel:SetColor((colourOverride or GetColorDefForValue(-1)):UnpackRGBA())
+	self.summaryCtrl.donatedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())
+	self.summaryCtrl.balanceLabel:SetColor((colourOverride or GetColorDefForValue(data.balance)):UnpackRGBA())
+
+	local rankColour = ExcessiveWithdrawals.GetColorDefForRank(data.rankIndex)
+	self.summaryCtrl.rankLabel:SetColor((colourOverride or rankColour):UnpackRGBA())
 end

@@ -116,15 +116,22 @@ function ExcessiveWithdrawals:CommaValue(amount)
 end
 
 function ExcessiveWithdrawals.GetHexForValue(value)
-	local colourHex = "CCCCCC"
+	local colourHex = "999999"
 	if value > 0 then
 		colourHex = "AAFFAA"
 	elseif value < 0 then
-		colourHex = "FFCC99"
+		colourHex = "FFCC77"
 	end
 	return colourHex
 end
 
 function ExcessiveWithdrawals.GetColorDefForValue(value)
 	return ZO_ColorDef:New(ExcessiveWithdrawals.GetHexForValue(value))
+end
+
+function ExcessiveWithdrawals.GetColorDefForRank(rankIndex)
+	if not rankIndex then return ZO_ColorDef:New("999999") end
+	return rankIndex <= ExcessiveWithdrawals.db.guildRank and ZO_ColorDef:New("99CCFF") or
+				 rankIndex >= ExcessiveWithdrawals.db.demoteRank and ZO_ColorDef:New("FFCC77") or
+				 ZO_ColorDef:New("AAFFAA")
 end

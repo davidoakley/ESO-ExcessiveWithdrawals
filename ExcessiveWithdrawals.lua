@@ -29,10 +29,16 @@ local function fmtnum(val, showPositive)
 end
 ExcessiveWithdrawals.fmtnum = fmtnum
 
+function getRankIndex(guildId, userName)
+	local _, _, rankIndex, _, _ = GetGuildMemberInfo(guildId, GetGuildMemberIndexFromDisplayName(guildId, userName))
+	return rankIndex
+end
+
 function ExcessiveWithdrawals:UserSummary(guildId, userName, userData)
 	local summary = {
 		guildId = guildId,
 		userName = userName,
+		rankIndex = getRankIndex(guildId, userName),
 		balance = userData.goldDeposit - userData.goldWithdraw + userData.itemsDepositVal - userData.itemsWithdrawVal
 	}
 

@@ -5,13 +5,10 @@
 ---
 local Window = ExcessiveWithdrawals.window
 local GetColorDefForValue = ExcessiveWithdrawals.GetColorDefForValue
+local fmtnum = ExcessiveWithdrawals.fmtnum
 
 function Window:Init()
 	ZO_ScrollList_AddDataType(self.userListCtrl, 0, "EWWindow_UserRow", 35, function(...) self:LayoutRow(...) end, nil, nil, nil)
-end
-
-local function fmtnum(val)
-	return zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
 end
 
 function Window:Open()
@@ -37,18 +34,21 @@ function Window:Close()
 end
 
 function Window:LayoutRow(rowCtrl, data, _)
-	rowCtrl.nameLabel:SetText(data.userName or "-")
+	local rankIcon = zo_iconFormatInheritColor(GetFinalGuildRankTextureSmall(data.guildId, data.rankIndex), 32, 32)
+	local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
+	local colourOverride = not data.member and ZO_ColorDef:New("999999")
+	local rankColour = ExcessiveWithdrawals.GetColorDefForRank(data.rankIndex)
+
+	local name = "|c"..(colourOverride or rankColour):ToHex()..rankIcon .. "|r" .. data.userName
+
+	rowCtrl.nameLabel:SetText(name or "-")
 	rowCtrl.addedLabel:SetText(fmtnum(data.itemsDepositVal) or "-")
 	rowCtrl.removedLabel:SetText(fmtnum(data.itemsWithdrawVal) or "-")
 	local cashDonated = data.goldDeposit - data.goldWithdraw
 	rowCtrl.donatedLabel:SetText(fmtnum(cashDonated) or "-")
-	rowCtrl.balanceLabel:SetText(("-"..fmtnum(-data.balance)) or "-")
+	rowCtrl.balanceLabel:SetText((fmtnum(data.balance)) or "-")
 
-	--local colour = data.member and ZO_DEFAULT_ENABLED_COLOR or ZO_DEFAULT_DISABLED_COLOR
-	local colourOverride = not data.member and ZO_ColorDef:New("CCCCCC")
-	local colour = colourOverride or ZO_DEFAULT_ENABLED_COLOR
-
-	rowCtrl.nameLabel:SetColor(colour:UnpackRGBA())
+	rowCtrl.nameLabel:SetColor((colourOverride or ZO_DEFAULT_ENABLED_COLOR):UnpackRGBA())
 	rowCtrl.addedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())
 	rowCtrl.removedLabel:SetColor((colourOverride or GetColorDefForValue(-1)):UnpackRGBA())
 	rowCtrl.donatedLabel:SetColor((colourOverride or GetColorDefForValue(1)):UnpackRGBA())

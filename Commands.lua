@@ -7,57 +7,58 @@
 function ExcessiveWithdrawals:Commands(key, val)
 	if string.find(key, "his") or string.find(key, "stat") then
 		if string.find(val, "@") == nil then
-			ExcessiveWithdrawals:ShowDisabled(true)
+			self:ShowDisabled(true)
 			return true
 		end
 		--self:ShowUserHistory(val)
-		ExcessiveWithdrawals.userWindow:Open(ExcessiveWithdrawals.db.guildId, val)
+		if self:CheckData(val) == false then return true end
+		self.userWindow:Open(self.db.guildId, val)
 		return true
 	end
 	if string.find(key, "ign") or string.find(key, "ena") then
-		if ExcessiveWithdrawals:CheckData(val) == false then return true end
+		if self:CheckData(val) == false then return true end
 		if string.find(key, "ign") then
-			ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)].ignore = true
+			self.db.guilds[self.db.guildId].users[string.lower(val)].ignore = true
 		else
-			ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)].ignore = false
+			self.db.guilds[self.db.guildId].users[string.lower(val)].ignore = false
 		end
-		local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)]
+		local userData = self.db.guilds[self.db.guildId].users[string.lower(val)]
 		local notify = "Enabled"
 		if userData.ignore == true then notify = "Disabled" end
-		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \nUsername: ' .. userData.userName .. '\nNotifications: ' .. notify)
+		CHAT_SYSTEM:AddMessage(self.displayName .. ' -- \nUsername: ' .. userData.userName .. '\nNotifications: ' .. notify)
 		return true
 	end
 	if string.find(key, "remov") then
-		if ExcessiveWithdrawals:CheckData(val) == false then return true end
-		local userData = ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)]
+		if self:CheckData(val) == false then return true end
+		local userData = self.db.guilds[self.db.guildId].users[string.lower(val)]
 		local userName = userData.userName
-		ExcessiveWithdrawals.db.guilds[ExcessiveWithdrawals.db.guildId].users[string.lower(val)] = nil
-		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \nGuild bank history for ' .. userData.userName .. ' has been removed/reset.')
+		self.db.guilds[self.db.guildId].users[string.lower(val)] = nil
+		CHAT_SYSTEM:AddMessage(self.displayName .. ' -- \nGuild bank history for ' .. userData.userName .. ' has been removed/reset.')
 		return true
 	end
 	if string.find(key, "reset") then
 		if string.find(val, "hist") then
-			ExcessiveWithdrawals.db.guilds = {}
-			CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n Successfully reset all guild bank history.')
+			self.db.guilds = {}
+			CHAT_SYSTEM:AddMessage(self.displayName .. ' -- \n Successfully reset all guild bank history.')
 		else
 			local guildName = nil
 			if tonumber(val) ~= nil then guildName = GetGuildName(val) end
-			if ExcessiveWithdrawals.db.guilds ~= nil then
+			if self.db.guilds ~= nil then
 				if guildName == nil or guildName == "" then
-					CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. " -- \n |cFF0000ERROR: Guild number doesn't exist.")
+					CHAT_SYSTEM:AddMessage(self.displayName .. " -- \n |cFF0000ERROR: Guild number doesn't exist.")
 					return true
-				elseif ExcessiveWithdrawals.db.guilds[val] == nil then
-					CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n |cFF0000ERROR: No data was found for ' .. guildName .. '.')
+				elseif self.db.guilds[val] == nil then
+					CHAT_SYSTEM:AddMessage(self.displayName .. ' -- \n |cFF0000ERROR: No data was found for ' .. guildName .. '.')
 					return true
 				end
-				ExcessiveWithdrawals:ResetGuild(val)
+				self:ResetGuild(val)
 			end
-			CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n Successfully reset guild bank history for ' .. guildName .. '.')
+			CHAT_SYSTEM:AddMessage(self.displayName .. ' -- \n Successfully reset guild bank history for ' .. guildName .. '.')
 		end
 		return true
 	end
 	if string.find(key, "list") then
-		local results = ExcessiveWithdrawals:AnalyzeUsers(ExcessiveWithdrawals.db.guildId)
+		local results = self:AnalyzeUsers(self.db.guildId)
 		self:ListAnalysis(results)
 		return true
 	end

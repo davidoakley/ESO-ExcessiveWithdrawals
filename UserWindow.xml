@@ -1,6 +1,70 @@
 <GuiXml>
     <Controls>
 
+        <Control name="EWUserWindow_Summary" virtual="true" mouseEnabled="true">
+            <OnInitialized>
+                self.addedLabel = self:GetNamedChild("Added")
+                self.removedLabel = self:GetNamedChild("Removed")
+                self.donatedLabel = self:GetNamedChild("Donated")
+                self.balanceLabel = self:GetNamedChild("Balance")
+                self.rankLabel = self:GetNamedChild("Rank")
+            </OnInitialized>
+            <Dimensions y="60"/>
+            <Controls>
+                <!-- Headings -->
+                <Label name="$(parent)BalanceHeading" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Balance">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-18" offsetY="0"/>
+                    <Dimensions x="120" y="30" />
+                </Label>
+
+                <Label name="$(parent)DonatedHeading" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Donated">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)BalanceHeading" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="30" />
+                </Label>
+
+                <Label name="$(parent)RemovedHeading" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Removed">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)DonatedHeading" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="30" />
+                </Label>
+
+                <Label name="$(parent)AddedHeading" inherits="ZO_SelectableLabel" font="ZoFontHeader" horizontalAlignment="RIGHT" verticalAlignment="CENTER" mouseEnabled="true" text="Added">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)RemovedHeading" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="30" />
+                </Label>
+
+                <Label name="$(parent)RankHeading" inherits="ZO_SelectableLabel" font="ZoFontHeader" verticalAlignment="CENTER" mouseEnabled="true" text="Rank">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="0"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)AddedHeading" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                </Label>
+
+                <!-- Values -->
+                <Label name="$(parent)Balance" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="-">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)" offsetX="-18" offsetY="30"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <Label name="$(parent)Donated" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="-">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Balance" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <Label name="$(parent)Removed" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="-">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Donated" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <Label name="$(parent)Added" inherits="ZO_SelectableLabel" font="ZoFontGameLarge" horizontalAlignment="RIGHT" mouseEnabled="false" text="-">
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Removed" relativePoint="TOPLEFT" offsetX="0" offsetY="0"/>
+                    <Dimensions x="120" y="35" />
+                </Label>
+
+                <Label name="$(parent)Rank" inherits="ZO_SelectableLabel" font="ZoFontHeader"  mouseEnabled="false" text="Rank">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="0" offsetY="30"/>
+                    <Anchor point="BOTTOMRIGHT" relativeTo="$(parent)Added" relativePoint="BOTTOMLEFT" offsetX="0" offsetY="0"/>
+                </Label>
+            </Controls>
+        </Control>
+
         <Control name="EWUserWindow_Row" virtual="true" mouseEnabled="true">
             <OnInitialized>
                 self.dateLabel = self:GetNamedChild("Date")
@@ -92,7 +156,8 @@
                 ExcessiveWithdrawals.userWindow = self
                 self.listCtrl = self:GetNamedChild("List")
                 self.titleLabel = self:GetNamedChild("HeaderLabel")
-                self.spinner = self:GetNamedChild("HeaderLoadingSpinner")
+                self.spinnerCtrl = self:GetNamedChild("HeaderLoadingSpinner")
+                self.summaryCtrl = self:GetNamedChild("Summary")
             </OnInitialized>
 
             <OnUpdate>
@@ -146,9 +211,22 @@
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)Header" relativePoint="BOTTOMRIGHT" offsetX="0" offsetY="0"/>
                 </Texture>
 
-                <Control name="$(parent)Headings" inherits="EWUserWindow_HeadingRow">
+                <Control name="$(parent)Summary" inherits="EWUserWindow_Summary">
                     <Anchor point="TOPLEFT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMLEFT" offsetX="8" offsetY="0" />
                     <Anchor point="TOPRIGHT" relativeTo="$(parent)TopDivider" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="0" />
+                </Control>
+
+                <Texture name="$(parent)SummaryDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
+                    <Dimensions y="4"/>
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)Summary" relativePoint="BOTTOMLEFT" offsetX="-8" offsetY="0"/>
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)Summary" relativePoint="BOTTOMRIGHT" offsetX="8" offsetY="0"/>
+                </Texture>
+
+                <!-- Add summary section here -->
+
+                <Control name="$(parent)Headings" inherits="EWUserWindow_HeadingRow">
+                    <Anchor point="TOPLEFT" relativeTo="$(parent)SummaryDivider" relativePoint="BOTTOMLEFT" offsetX="8" offsetY="0" />
+                    <Anchor point="TOPRIGHT" relativeTo="$(parent)SummaryDivider" relativePoint="BOTTOMRIGHT" offsetX="-8" offsetY="0" />
                 </Control>
 
                 <Texture name="$(parent)HeadingsDivider" textureFile="/esoui/art/miscellaneous/centerscreen_topdivider.dds" tier="HIGH">
