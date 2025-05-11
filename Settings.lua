@@ -6,7 +6,7 @@
 
 
 function ExcessiveWithdrawals:Menu()
-	local LAM2 = LibStub:GetLibrary("LibAddonMenu-2.0")
+	local LAM2 = LibAddonMenu2
 
 	local panelData = {
 		type = "panel",
