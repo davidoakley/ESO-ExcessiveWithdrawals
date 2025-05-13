@@ -262,21 +262,25 @@ function ExcessiveWithdrawals:CheckData(user)
 	if ExcessiveWithdrawals.db.guildId == nil or ExcessiveWithdrawals.db.guildId == 0 then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: No guild is selected.|r\nType "/exwithdraw" to configure.')
 		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, "No guild is selected")
-		return false
+		return nil
 	elseif ExcessiveWithdrawals.db.guilds[self.db.guildId] == nil then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: No data collected for ' .. GetGuildName(self.db.guildId) .. '.')
 		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, 'No data collected for ' .. GetGuildName(self.db.guildId))
-		return false
+		return nil
 	elseif user == nil or user == "" then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: You must enter a username.')
 		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, "You must enter a username")
-		return false
-	elseif ExcessiveWithdrawals.db.guilds[self.db.guildId].users[string.lower(user)] == nil then
+		return nil
+	end
+
+	local userObj = ExcessiveWithdrawals.db.guilds[self.db.guildId].users[string.lower(user)]
+
+	if not userObj then
 		CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals.displayName .. ' -- \n|cFF0000ERROR: ' .. user .. ' does not currently have any statistics.')
 		ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.NEGATIVE_CLICK, user .. ' does not currently have any statistics')
-		return false
+		return nil
 	end
-	return true
+	return userObj
 end
 
 function ExcessiveWithdrawals:ShowDisabled(showHint)

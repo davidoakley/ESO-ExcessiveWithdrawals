@@ -18,11 +18,13 @@ function UserWindow:Init()
 end
 
 function UserWindow:Open(guildId, userName)
-	self.userName = userName
 	self.guildId = guildId
 	self:SetHidden(false)
 	self:BringWindowToTop()
-	self.titleLabel:SetText(GetGuildName(guildId) .. " - " .. userName)
+
+	local userObj = ExcessiveWithdrawals:GetUser(userName, GetTimeStamp())
+	self.userName = userObj.userName or userName
+	self.titleLabel:SetText(GetGuildName(guildId) .. " - " .. self.userName)
 
 	self:UpdateData()
 	if not self.users then
@@ -104,9 +106,9 @@ end
 
 function UserWindow:ProcessEvent(event)
 	local info = event:GetEventInfo()
-	local user = "@"..info.displayName
+	local user = "@" .. string.lower(info.displayName)
 	local eventTime = event:GetEventTimestampS()
-	if not self.users[user] then self.users[user] = { userName = user, transactions = {}, balance = 0 } end
+	if not self.users[user] then self.users[user] = { userName = info.displayName, transactions = {}, balance = 0 } end
 	local userObj = self.users[user]
 
 	if event:GetEventCategory() == GUILD_HISTORY_EVENT_CATEGORY_BANKED_CURRENCY then
@@ -114,7 +116,7 @@ function UserWindow:ProcessEvent(event)
 	else
 		self:ProcessItemEvent(userObj, event, eventTime, info)
 	end
-	if user == self.userName then
+	if user == string.lower(self.userName) then
 		self:UpdateData()
 	end
 end

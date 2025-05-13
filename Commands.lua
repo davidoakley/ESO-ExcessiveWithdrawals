@@ -11,8 +11,9 @@ function ExcessiveWithdrawals:Commands(key, val)
 			return true
 		end
 		--self:ShowUserHistory(val)
-		if self:CheckData(val) == false then return true end
-		self.userWindow:Open(self.db.guildId, val)
+		local userObj = self:CheckData(val)
+		if not userObj then return true end
+		self.userWindow:Open(self.db.guildId, userObj.userName)
 		return true
 	end
 	if string.find(key, "ign") or string.find(key, "ena") then
