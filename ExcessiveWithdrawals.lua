@@ -22,8 +22,10 @@ end
 local function fmtnum(val, showPositive)
 	if val < 0 then
 		return "-"..zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(-val)))
-	else
+	elseif val > 0 then
 		return (showPositive and "+" or "") .. zo_strformat("<<1>>", ZO_LocalizeDecimalNumber(math.floor(val)))
+	else
+		return "0"
 	end
 end
 ExcessiveWithdrawals.fmtnum = fmtnum

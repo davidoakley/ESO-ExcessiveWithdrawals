@@ -52,10 +52,11 @@ function UserWindow:UpdateData()
 	summary.member = GetGuildMemberIndexFromDisplayName(self.guildId, self.userName) and true
 	self:SetSummary(summary)
 
-	if not self.users or not self.users[self.userName] or not self.users[self.userName].transactions then
+	local lcUserName = string.lower(self.userName)
+	if not self.users or not self.users[lcUserName] or not self.users[lcUserName].transactions then
 		return
 	end
-	local transactions = self.users[self.userName].transactions
+	local transactions = self.users[lcUserName].transactions
 	table.sort(transactions, eventTimeComparison)
 	local balance = userObj.goldDeposit - userObj.goldWithdraw + userObj.itemsDepositVal - userObj.itemsWithdrawVal
 	self:ProcessBalances(transactions, balance)
@@ -82,11 +83,17 @@ function UserWindow:LayoutRow(rowCtrl, data, _)
 			name = "|cFFCC99Cash Withdrawal|r"
 		end
 	else
-		if data.qty >= 0 then
+		if data.qty > 0 then
 			name = "|cAAFFAAAdded " .. data.qty .. " x|r " .. data.item
-		else
+		elseif data.qty < 0 then
 			name = "|cFFCC99Removed " .. -data.qty .. " x|r " .. data.item
+		else
+			name = "Replaced " .. data.item
 		end
+	end
+
+	if data.transactions and #data.transactions > 1 then
+		name = name .. " (" .. table.concat(data.transactions, " ") .. ")"
 	end
 
 	local price = data.price or data.cash
@@ -128,11 +135,17 @@ local function insertOrConsolidate(transactions, newTxn)
 		for i = 1, #transactions do
 			local oldTxn = transactions[i]
 			if oldTxn.eventTime >= startTime and oldTxn.item == newTxn.item then
+				if oldTxn.transactions then
+					table.insert(oldTxn.transactions, fmtnum(newTxn.qty, true))
+				else
+					oldTxn.transactions = { fmtnum(oldTxn.qty, true), fmtnum(newTxn.qty, true) }
+				end
+
 				oldTxn.qty = oldTxn.qty + newTxn.qty
 				oldTxn.price = oldTxn.price + newTxn.price
-				if oldTxn.qty == 0 then -- Cancelled out!
-					table.remove(transactions, i)
-				end
+				--if oldTxn.qty == 0 then -- Cancelled out!
+				--	table.remove(transactions, i)
+				--end
 				return -- Consolidated - return without inserting the new transaction!
 			end
 		end
