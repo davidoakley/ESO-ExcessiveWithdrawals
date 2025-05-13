@@ -13,7 +13,7 @@ function ExcessiveWithdrawals:Menu()
 		name = self.addonName,
 		displayName = self.displayName,
 		author = "depeshmood, SirNightstorm",
-		version = "25.1.0b1",
+		version = "25.1.2",
 		slashCommand = "/exwithdraw",
 		registerForRefresh = true,
 		registerForDefaults = true,
