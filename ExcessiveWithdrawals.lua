@@ -333,7 +333,9 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 	local ShowPlayerContextMenu = CHAT_SYSTEM.ShowPlayerContextMenu
 	CHAT_SYSTEM.ShowPlayerContextMenu = function(self, displayName, rawName)
 		ShowPlayerContextMenu(self, displayName, rawName)
-		AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, displayName) end )
+		AddCustomMenuItem("List Excessive Withdrawals", function()
+			ExcessiveWithdrawals.userWindow:Open(ExcessiveWithdrawals.db.guildId, displayName)
+		end)
 		--d("DisplayName: " .. displayName)
 		if ZO_Menu_GetNumMenuItems() > 0 then
 			ShowMenu()
@@ -354,11 +356,12 @@ function ExcessiveWithdrawals.AdjustContextMenus()
 			--In case someone messed around with the guild roster... >_<
 			--data.characterName = string.gsub(data.characterName, "|ceeeeee", "")
 			--d(data.displayName)
-			AddCustomMenuItem("List Excessive Withdrawals", function() ExcessiveWithdrawals.userWindow:Open(self.db.guildId, data.displayName) end )
+			AddCustomMenuItem("List Excessive Withdrawals", function()
+				ExcessiveWithdrawals.userWindow:Open(ExcessiveWithdrawals.db.guildId, data.displayName)
+			end)
 			self:ShowMenu(control)
 		end
 	end
-
 end
 
 function ExcessiveWithdrawals.OnAddOnLoaded(_, addon)
