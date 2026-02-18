@@ -21,6 +21,7 @@ function UserWindow:Open(guildId, userName)
 	self.guildId = guildId
 	self:SetHidden(false)
 	self:BringWindowToTop()
+	SCENE_MANAGER:SetInUIMode(true)
 
 	local userObj = ExcessiveWithdrawals:GetUser(userName, GetTimeStamp())
 	self.userName = userObj.userName or userName
@@ -40,6 +41,10 @@ function UserWindow:Copy()
 	if ExcessiveWithdrawals:CheckData(self.userName) == false then return true end
 	CHAT_SYSTEM:AddMessage(ExcessiveWithdrawals:GetUserHistory(self.userName))
 	ZO_Alert(UI_ALERT_CATEGORY_ALERT, SOUNDS.POSITIVE_CLICK, "Summary written to chat window")
+end
+
+function UserWindow:Mail()
+	ExcessiveWithdrawals:CreateMail(self.userName, ExcessiveWithdrawals.db.email.subject, ExcessiveWithdrawals.db.email.body)
 end
 
 local function eventTimeComparison(x,y)

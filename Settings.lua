@@ -34,7 +34,7 @@ function ExcessiveWithdrawals:Menu()
 		table.insert(demoteValues, i)
 	end
 
-	LAM2:RegisterAddonPanel(self.name .. "LAM2Options", panelData)
+	local panel = LAM2:RegisterAddonPanel(self.name .. "LAM2Options", panelData)
 	local optionsTable = {
 		{
 			type = "header",
@@ -155,6 +155,39 @@ function ExcessiveWithdrawals:Menu()
 			width = "half",
 			func = function() self:Commands("enable", self.db.gUser) end
 		},
+
+		{
+			type = "header",
+			name = "Email"
+		},
+		{
+			type = "editbox",
+			name = "Subject",
+			tooltip = "Enter the subject line for the warning email.",
+			getFunc = function() return self.db.email.subject end,
+			setFunc = function(text) print(text) end,
+			isMultiline = false,	--boolean
+			default = "",	--(optional)
+			reference = "ExcessiveWithdrawals_Subject"
+		},
+		{
+			type = "editbox",
+			name = "Body Text",
+			tooltip = "Enter the body text for the warning email",
+			getFunc = function() return self.db.email.body end,
+			setFunc = function(text) print(text) end,
+			isMultiline = true,	--boolean
+			default = "",	--(optional)
+			reference = "ExcessiveWithdrawals_Body"
+		},
+		{
+			type = "description",
+			text = [[In the email subject and body, use the following placeholders:
+$GUILD - your guild name
+$USER - the player's ESO user name
+$SUMMARY - a summary of the player's credits, withdrawals, donations and balance]]
+		},
+
 		{
 			type = "header",
 			name = "Addon Settings",
@@ -236,5 +269,24 @@ Slash commands can sometimes cause the UI to become unresponsive.
 Type "/reloadui" to reset your user interface and resolve the issue.]]
 		}
 	}
+
+	CALLBACK_MANAGER:RegisterCallback("LAM-PanelControlsCreated", function(newPanel)
+		d("LAM-PanelControlsCreated 1 - "..newPanel:GetName())
+		if newPanel:GetName() ~= self.name .. "LAM2Options" then return end
+		d("LAM-PanelControlsCreated 2")
+		local width = ExcessiveWithdrawals_Subject.container:GetWidth() * 2 --327
+		local height = 400 --307 --ExcessiveWithdrawals_Body.container:GetHeight() * 2
+		ExcessiveWithdrawals_Subject.container:SetWidth(width)
+		ExcessiveWithdrawals_Body.container:SetWidth(width)
+		ExcessiveWithdrawals_Body.container:SetHeight(height)
+		ExcessiveWithdrawals_Body:SetHeight(height)
+
+		--local saveVer = self.savedVariables
+		--if saveVer.showPriceMM or saveVer.showPriceTTC or saveVer.showPriceATT then
+		--	self:RefreshMenuForManual()
+		--	LibAddonMenu2.util.RequestRefreshIfNeeded(PriorityByManual)
+		--end
+	end)
+
 	LAM2:RegisterOptionControls(self.name .. "LAM2Options", optionsTable)
 end

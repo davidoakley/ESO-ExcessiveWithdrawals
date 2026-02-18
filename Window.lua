@@ -14,6 +14,7 @@ end
 
 function Window:Open()
 	self:SetHidden(false)
+	SCENE_MANAGER:SetInUIMode(true)
 
 	self.titleLabel:SetText("Excessive Withdrawals - " .. GetGuildName(ExcessiveWithdrawals.db.guildId))
 

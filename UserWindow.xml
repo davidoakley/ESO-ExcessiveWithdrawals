@@ -204,6 +204,24 @@
                             </OnMouseExit>
                         </Button>
 
+                        <Button name="$(parent)MailButton" inherits="ZO_ButtonBehaviorClickSound">
+                            <Dimensions y="25" x="25" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$(parent)CopyButton" offsetX="-8" offsetY="0" />
+                            <Textures
+                                normal="EsoUI/Art/Mail/mail_tabIcon_compose_up.dds"
+                                pressed="EsoUI/Art/Mail/mail_tabIcon_compose_down.dds"
+                                mouseOver="EsoUI/Art/Mail/mail_tabIcon_compose_over.dds" />
+                            <OnClicked>
+                                ExcessiveWithdrawals.userWindow:Mail()
+                            </OnClicked>
+                            <OnMouseEnter>
+                                ZO_Tooltips_ShowTextTooltip(self, LEFT, "Compose a warning email")
+                            </OnMouseEnter>
+                            <OnMouseExit>
+                                ZO_Tooltips_HideTextTooltip()
+                            </OnMouseExit>
+                        </Button>
+
                         <Label name="$(parent)Label" font="$(BOLD_FONT)|$(KB_26)|soft-shadow-thick" text="@UserName">
 <!--                            <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="4" offsetY="10" />-->
                             <Anchor point="TOPLEFT" relativeTo="$(parent)" offsetX="8" offsetY="10" />
@@ -211,7 +229,7 @@
 
                         <!-- Loading spinner -->
                         <Control name="$(parent)LoadingSpinner" inherits="ZO_Loading" tier="DT_CONTROLS" layer="DL_OVERLAY" level="99" hidden="false" >
-                            <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$(parent)CopyButton" offsetX="-8" offsetY="0" />
+                            <Anchor point="TOPRIGHT" relativePoint="TOPLEFT" relativeTo="$(parent)MailButton" offsetX="-8" offsetY="0" />
                             <Dimensions y="20" />
                             <OnInitialized>
                                 ZO_Loading_Initialize(self, "")

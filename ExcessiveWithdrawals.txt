@@ -9,6 +9,7 @@ ExcessiveWithdrawals.lua
 Utils.lua
 Settings.lua
 Commands.lua
+Mail.lua
 
 Window.xml
 UserWindow.xml

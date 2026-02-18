@@ -7,7 +7,20 @@ ExcessiveWithdrawals = {
 		warnings = false,
 		gUser = "",
 		ignoreAmt = 100000,
-		guilds = {}
+		guilds = {},
+		email = {
+			subject = "$GUILD Guild Bank",
+			body = [[Hello $USER,
+
+We've reviewed your activity in the guild bank and unfortunately the value of your withdrawals is currently exceeding your deposits and donations.
+
+Please make deposits, or a donation, to the guild bank to bring you back up to balance; guild members who do not meet this requrement may have their rank reduced which will remove bank access.
+
+Here is a summary of your current guild bank status:
+$SUMMARY
+
+Yours, $GUILD Admins]],
+		}
 	},
 	processors = {}
 }
