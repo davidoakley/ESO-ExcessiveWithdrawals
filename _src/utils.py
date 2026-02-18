@@ -52,7 +52,6 @@ def get_addon_file_path(addon_name):
     return None
 
 def get_other_addon_version(addon_name):
-    home_dir = os.path.expanduser("~")
     with open(get_addon_file_path(addon_name), 'r') as file:
         txt = file.read()
         ver_line = get_line(txt, "## AddOnVersion:")
@@ -99,5 +98,5 @@ def reload_eso(reloadui_keys):
             send_keys(reloadui_keys, vk_packet=False)
         else:
             print("ESO not active")
-    except ElementNotFoundError as e:
+    except ElementNotFoundError:
         print("ESO not running")
