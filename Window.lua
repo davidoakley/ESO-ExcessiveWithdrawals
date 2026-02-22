@@ -34,7 +34,7 @@ end
 
 function Window:UpdateData()
 	if not ExcessiveWithdrawals.db.guilds or not ExcessiveWithdrawals.db.guilds[self.guildId] then return end
-	local currentLastEventTotal = ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[1] + ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[2]
+	local currentLastEventTotal = (ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[1] or 0) + ExcessiveWithdrawals.db.guilds[self.guildId].lastEvent[2]
 
 	if currentLastEventTotal == self.lastLastEventTotal then
 		return -- No data has arrived since the last update
